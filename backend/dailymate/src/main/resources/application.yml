@@ -1,23 +1,42 @@
+# language: yaml
+# 文件：src/main/resources/application.yml
 spring:
   application:
     name: dailymate
 
   datasource:
-    url: jdbc:mysql://localhost:3306/dailymate?useSSL=false&serverTimezone=UTC&characterEncoding=utf8
+    # 添加 allowPublicKeyRetrieval=true 与 useSSL=false，保留 serverTimezone/characterEncoding
+    url: jdbc:mysql://localhost:3306/dailymate?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=utf8
     username: root
     password: xiang123
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  # JPA??
   jpa:
     hibernate:
-      ddl-auto: update   # 'update'????????????????????
+      ddl-auto: update
     show-sql: true
+    # 使用通用的 Dialect，避免类名不一致问题
+    database-platform: org.hibernate.dialect.MySQLDialect
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
 
-# ?????
+  # 禁用 devtools 重启（若出现类加载/方言类找不到的奇怪错误，临时关闭以排查）
+  devtools:
+    restart:
+      enabled: false
+
+# 兼容项（当 Hibernate 无法从 datasource 读取时）
+jakarta:
+  persistence:
+    jdbc:
+      url: jdbc:mysql://localhost:3306/dailymate?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=utf8
+      driver: com.mysql.cj.jdbc.Driver
+      user: root
+      password: xiang123
+
+
+
 server:
   port: 8080
-
