@@ -27,6 +27,10 @@ spring:
     restart:
       enabled: false
 
+  # 设置时区为上海
+  jackson:
+    time-zone: Asia/Shanghai
+
 # 兼容项（当 Hibernate 无法从 datasource 读取时）
 jakarta:
   persistence:
