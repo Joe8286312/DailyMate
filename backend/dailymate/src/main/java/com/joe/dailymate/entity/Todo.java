@@ -34,7 +34,30 @@ public class Todo {
     @Column(name = "updated_at")
     private Date updatedAt; // 最后更新时间
 
-    // 当实体新建时自动赋值
+    // ================== 新增字段："开始/结束/完成时间" ===================
+    /**
+     * 计划/实际开始时间
+     */
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "start_time")
+    private Date startTime;
+
+    /**
+     * 计划/实际截止时间
+     */
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "end_time")
+    private Date endTime;
+
+    /**
+     * 实际结束/完成时间
+     * status==1时建议赋值
+     */
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "finish_time")
+    private Date finishTime;
+
+    // ================== 自动填充时间戳逻辑（无需手动赋值） ===================
     @PrePersist
     protected void onCreate() {
         Date now = new Date();
@@ -42,7 +65,6 @@ public class Todo {
         this.updatedAt = now;
     }
 
-    // 当实体被更新时自动赋值
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = new Date();
