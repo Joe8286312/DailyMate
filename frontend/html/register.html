@@ -321,8 +321,11 @@
                 </div>
                 <div class="form-group">
                     <label for="registerEmail">邮箱 (可选)</label>
-                    <input type="email" id="registerEmail" class="form-input" placeholder="请输入邮箱">
+                    <input type="email" id="registerEmail" class="form-input" placeholder="请输入邮箱 (如不填写，将使用用户名@email.com)">
                     <span class="auth-error" id="registerEmailError"></span>
+                    <small style="display: block; margin-top: 4px; color: #718096; font-size: 12px;">
+                        邮箱为选填项，如果不填写，系统将自动为您生成默认邮箱：用户名@email.com
+                    </small>
                 </div>
                 <div class="form-group">
                     <label for="registerPassword">密码 *</label>
@@ -349,6 +352,23 @@
     </div>
 
     <script>
+        // API配置
+        const API_CONFIG = {
+            BASE_URL: 'http://localhost:8080',
+            TOKEN_KEY: 'dailyMate_token',
+            USER_KEY: 'dailyMate_user'
+        };
+
+        // 安全检查：如果已登录则跳转到主页面
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem(API_CONFIG.TOKEN_KEY);
+            const user = localStorage.getItem(API_CONFIG.USER_KEY);
+            
+            if (token && user) {
+                window.location.href = 'index.html';
+            }
+        });
+
         // 用户数据模型
         class User {
             constructor(id, username, password, email = '', avatar = '', isDelete = 0) {
@@ -558,15 +578,20 @@
                 passwordStrengthText.textContent = `密码强度: ${text}`;
             });
             
+            // 邮箱格式验证函数
+            function isValidEmail(email) {
+                if (!email) return true; // 允许为空
+                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                return emailRegex.test(email);
+            }
+            
             // 表单提交事件
-            registerForm.addEventListener('submit', (e) => {
+            registerForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
                 const username = registerUsername.value.trim();
                 const email = registerEmail.value.trim();
                 const password = registerPassword.value;
                 const confirmPassword = registerConfirmPassword.value;
-                
                 // 重置所有错误信息
                 authManager.showError('registerUsernameError', '');
                 authManager.showError('registerEmailError', '');
@@ -574,44 +599,69 @@
                 authManager.showError('registerConfirmPasswordError', '');
                 authManager.showError('registerError', '');
                 authManager.showSuccess('registerSuccess', '');
-                
                 // 验证输入
                 let hasError = false;
-                
                 if (!username) {
                     authManager.showError('registerUsernameError', '请输入用户名');
                     hasError = true;
+                } else if (username.length < 3) {
+                    authManager.showError('registerUsernameError', '用户名至少需要3个字符');
+                    hasError = true;
+                } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                    authManager.showError('registerUsernameError', '用户名只能包含字母、数字和下划线');
+                    hasError = true;
                 }
-                
+                // 邮箱验证
+                let finalEmail = email;
+                if (!finalEmail) {
+                    finalEmail = `${username}@email.com`;
+                }
+                if (finalEmail && !isValidEmail(finalEmail)) {
+                    authManager.showError('registerEmailError', '邮箱格式不正确，请使用xxx@xxx.com格式');
+                    hasError = true;
+                }
                 if (!password) {
                     authManager.showError('registerPasswordError', '请输入密码');
                     hasError = true;
+                } else if (password.length < 6) {
+                    authManager.showError('registerPasswordError', '密码至少需要6个字符');
+                    hasError = true;
                 }
-                
                 if (!confirmPassword) {
                     authManager.showError('registerConfirmPasswordError', '请确认密码');
                     hasError = true;
                 }
-                
                 if (password !== confirmPassword) {
                     authManager.showError('registerConfirmPasswordError', '两次输入的密码不一致');
                     hasError = true;
                 }
-                
                 if (hasError) return;
-                
-                // 尝试注册
-                const result = authManager.registerUser(username, password, email);
-                
-                if (result.success) {
-                    authManager.showSuccess('registerSuccess', '注册成功！正在跳转到登录页面...');
-                    
-                    // 延迟跳转，让用户看到成功消息
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 1500);
-                } else {
-                    authManager.showError('registerError', result.message);
+                try {
+                    // 调用后端注册接口，确保 email 绝不为空字符串
+                    const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/register`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: username,
+                            password: password,
+                            email: finalEmail,
+                            avatar: ''
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        authManager.showSuccess('registerSuccess', '注册成功！正在跳转到登录页面...');
+                        setTimeout(() => {
+                            window.location.href = 'login.html';
+                        }, 1500);
+                    } else {
+                        authManager.showError('registerError', data.msg || data.message || '注册失败');
+                    }
+                } catch (error) {
+                    console.error('注册失败:', error);
+                    authManager.showError('registerError', '注册失败，请检查网络连接或稍后重试');
                 }
             });
             

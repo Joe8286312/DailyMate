@@ -567,39 +567,61 @@
 
         // 初始化应用
         document.addEventListener('DOMContentLoaded', () => {
-            const authManager = new AuthManager();
-            
+            // API配置
+            const API_CONFIG = {
+                BASE_URL: 'http://localhost:8080',
+                TOKEN_KEY: 'dailyMate_token',
+                USER_KEY: 'dailyMate_user'
+            };
             // 获取表单元素
             const loginForm = document.getElementById('loginForm');
             const loginUsername = document.getElementById('loginUsername');
             const loginPassword = document.getElementById('loginPassword');
             const loginError = document.getElementById('loginError');
-            
             // 表单提交事件
-            loginForm.addEventListener('submit', (e) => {
+            loginForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
                 const username = loginUsername.value.trim();
                 const password = loginPassword.value;
-                
                 // 验证输入
                 if (!username || !password) {
-                    authManager.showError('loginError', '请输入用户名和密码');
+                    loginError.textContent = '请输入用户名和密码';
+                    loginError.style.display = 'block';
+                    setTimeout(() => { loginError.style.display = 'none'; }, 3000);
                     return;
                 }
-                
-                // 尝试登录
-                const result = authManager.loginUser(username, password);
-                
-                if (result.success) {
-                    authManager.showNotification('登录成功！正在跳转...');
-                    
-                    // 延迟跳转，让用户看到成功消息
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 1500);
-                } else {
-                    authManager.showError('loginError', result.message);
+                try {
+                    const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    const data = await response.json();
+                    if (data.success && data.token) {
+                        // 保存token和用户信息到localStorage
+                        localStorage.setItem(API_CONFIG.TOKEN_KEY, data.token);
+                        localStorage.setItem(API_CONFIG.USER_KEY, JSON.stringify(data.user));
+                        // 显示成功通知
+                        const notification = document.createElement('div');
+                        notification.className = 'notification success';
+                        notification.textContent = '登录成功！正在跳转...';
+                        document.body.appendChild(notification);
+                        setTimeout(() => {
+                            notification.style.animation = 'slideOut 0.3s ease-out';
+                            setTimeout(() => { if (notification.parentNode) document.body.removeChild(notification); }, 300);
+                        }, 1200);
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1500);
+                    } else {
+                        loginError.textContent = data.msg || data.message || '用户名或密码错误';
+                        loginError.style.display = 'block';
+                        setTimeout(() => { loginError.style.display = 'none'; }, 3000);
+                    }
+                } catch (err) {
+                    loginError.textContent = '网络错误或服务器异常';
+                    loginError.style.display = 'block';
+                    setTimeout(() => { loginError.style.display = 'none'; }, 3000);
                 }
             });
             

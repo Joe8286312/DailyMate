@@ -7,6 +7,169 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
+        /* 保持原有的CSS样式不变 */
+        /* 分类选项卡样式 */
+        .category-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 0 5px;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 8px;
+            display: inline-flex;
+        }
+
+        .category-tab {
+            padding: 10px 24px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .category-tab:hover {
+            background: #cbd5e0;
+            transform: translateY(-1px);
+        }
+
+        .category-tab.active {
+            background: linear-gradient(135deg, #4299e1 0%, #38b2ac 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
+        }
+
+        .category-tab.active:hover {
+            background: linear-gradient(135deg, #3182ce 0%, #319795 100%);
+        }
+        
+        /* 搜索框样式 */
+        .search-container {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .search-box {
+            position: relative;
+            max-width: 400px;
+            margin: 0;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px 12px 45px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #2d3748;
+            transition: all 0.3s;
+            background: #ffffff;
+            font-family: inherit;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .search-input:hover {
+            border-color: #cbd5e0;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            font-size: 16px;
+            z-index: 1;
+        }
+
+        .clear-search-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0aec0;
+            cursor: pointer;
+            padding: 4px;
+            font-size: 14px;
+            border-radius: 50%;
+            transition: all 0.3s;
+            display: none;
+        }
+
+        .clear-search-btn:hover {
+            background-color: #f7fafc;
+            color: #718096;
+        }
+
+        .search-input:not(:placeholder-shown) + .clear-search-btn {
+            display: block;
+        }
+
+        /* 搜索结果统计 */
+        .search-stats {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-stats.hidden {
+            display: none;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 30px 20px;
+            color: #718096;
+            font-style: italic;
+        }
+
+        .no-results i {
+            font-size: 32px;
+            margin-bottom: 10px;
+            color: #cbd5e0;
+            display: block;
+        }
+        
+        /* 搜索高亮样式 */
+        .search-highlight {
+            background-color: #ffd700;
+            padding: 1px 2px;
+            border-radius: 2px;
+            font-weight: bold;
+        }
+
+        /* 清除搜索小按钮 */
+        .clear-search-btn-small {
+            background: none;
+            border: none;
+            color: #4299e1;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .clear-search-btn-small:hover {
+            background-color: #e0f2fe;
+        }
+
         /* 全局样式 */
         * {
             margin: 0;
@@ -989,6 +1152,65 @@
             cursor: pointer;
         }
 
+        /* 通知样式 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #38b2ac;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+            max-width: 300px;
+            font-weight: 500;
+        }
+
+        .notification.error {
+            background: #e53e3e;
+        }
+
+        .notification.info {
+            background: #4299e1;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        /* 辅助类 */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
         /* 响应式调整 */
         @media (max-width: 1200px) {
             .header-row-bottom {
@@ -1064,71 +1286,16 @@
             .modal-header h3 {
                 font-size: 20px;
             }
+            
+            .search-box {
+                max-width: 100%;
+            }
         }
 
         @media (max-height: 700px) {
             .modal-content {
                 max-height: 90vh;
             }
-        }
-
-        /* 通知样式 */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #38b2ac;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 1000;
-            animation: slideIn 0.3s ease-out;
-            max-width: 300px;
-            font-weight: 500;
-        }
-
-        .notification.error {
-            background: #e53e3e;
-        }
-
-        .notification.info {
-            background: #4299e1;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-        }
-
-        /* 辅助类 */
-        .visually-hidden {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
         }
     </style>
 </head>
@@ -1194,12 +1361,13 @@
                         </div>
                     </div>
                     <div class="data-card card-today">
-                        <div class="card-title">今日概览</div>
+                        <div class="card-title" id="datePreviewTitle">今日概览</div>
                         <div class="card-content">
                             待办完成：<span id="todayDone" class="text-blue">0</span>项<br>
                             今日收入：<span id="todayIncome" class="text-green">0.00</span>元<br>
                             今日支出：<span id="todayExpense" class="text-red">0.00</span>元
                         </div>
+                        <input type="hidden" id="currentPreviewDate" value="">
                     </div>
                 </div>
             </div>
@@ -1236,6 +1404,22 @@
                             <i class="fas fa-plus"></i> 添加待办
                         </button>
                     </div>
+                    <!-- 分类选项卡 -->
+                    <div class="category-tabs">
+                        <button class="category-tab active" data-filter="all">全部</button>
+                        <button class="category-tab" data-filter="done">已完成</button>
+                        <button class="category-tab" data-filter="undone">未完成</button>
+                    </div>
+                    <!-- 搜索框 -->
+                    <div class="search-container">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" id="todoSearch" class="search-input" placeholder="搜索待办事项标题或内容...">
+                            <button id="clearTodoSearch" class="clear-search-btn" title="清除搜索">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
                     <div class="data-table-container">
                         <table class="data-table">
                             <thead>
@@ -1269,6 +1453,22 @@
                         <button id="addBillBtn" class="add-btn">
                             <i class="fas fa-plus"></i> 添加账单
                         </button>
+                    </div>
+                    <!-- 分类选项卡 -->
+                    <div class="category-tabs">
+                        <button class="category-tab active" data-filter="all">全部</button>
+                        <button class="category-tab" data-filter="income">收入</button>
+                        <button class="category-tab" data-filter="expense">支出</button>
+                    </div>
+                    <!-- 搜索框 -->
+                    <div class="search-container">
+                        <div class="search-box">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" id="billSearch" class="search-input" placeholder="搜索账单分类、备注或金额...">
+                            <button id="clearBillSearch" class="clear-search-btn" title="清除搜索">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                     </div>
                     <div class="data-table-container">
                         <table class="data-table">
@@ -1490,10 +1690,8 @@
             }
 
             initStorage() {
-                if (!localStorage.getItem('dailyMate_users')) {
-                    // 创建一个默认用户用于演示
-                    const defaultUser = new User(1, 'demo', 'demo123', 'demo@example.com');
-                    localStorage.setItem('dailyMate_users', JSON.stringify([defaultUser]));
+                if (!localStorage.getItem('dailyMate_currentUser')) {
+                    localStorage.setItem('dailyMate_currentUser', JSON.stringify(null));
                 }
                 if (!localStorage.getItem('dailyMate_todos')) {
                     localStorage.setItem('dailyMate_todos', JSON.stringify([]));
@@ -1501,49 +1699,41 @@
                 if (!localStorage.getItem('dailyMate_bills')) {
                     localStorage.setItem('dailyMate_bills', JSON.stringify([]));
                 }
-                if (!localStorage.getItem('dailyMate_currentUser')) {
-                    localStorage.setItem('dailyMate_currentUser', JSON.stringify(null));
-                }
             }
 
             loadData() {
-                this.users = JSON.parse(localStorage.getItem('dailyMate_users')) || [];
                 this.todos = JSON.parse(localStorage.getItem('dailyMate_todos')) || [];
                 this.bills = JSON.parse(localStorage.getItem('dailyMate_bills')) || [];
                 this.currentUser = JSON.parse(localStorage.getItem('dailyMate_currentUser'));
             }
 
             saveData() {
-                localStorage.setItem('dailyMate_users', JSON.stringify(this.users));
                 localStorage.setItem('dailyMate_todos', JSON.stringify(this.todos));
                 localStorage.setItem('dailyMate_bills', JSON.stringify(this.bills));
                 localStorage.setItem('dailyMate_currentUser', JSON.stringify(this.currentUser));
             }
 
-            // 用户管理方法
-            registerUser(username, password, email = '') {
-                if (this.users.find(u => u.username === username)) {
-                    return { success: false, message: '用户名已存在' };
-                }
-                
-                const id = Date.now();
-                const newUser = new User(id, username, password, email);
-                this.users.push(newUser);
-                this.saveData();
-                return { success: true, user: newUser };
-            }
-
-            loginUser(username, password) {
-                const user = this.users.find(u => 
-                    u.username === username && u.password === password && u.isDelete === 0
+            // 设置当前用户（从后端用户信息转换）
+            setCurrentUserFromBackend(backendUser) {
+                const frontendUser = new User(
+                    backendUser.id,
+                    backendUser.username,
+                    '', // 密码留空，因为使用token认证
+                    backendUser.email || '',
+                    backendUser.avatar || 'https://img.icons8.com/color/48/000000/user-male-circle--v2.png'
                 );
                 
-                if (user) {
-                    this.currentUser = user;
-                    this.saveData();
-                    return { success: true, user };
+                // 保留后端的时间戳
+                if (backendUser.createdAt) {
+                    frontendUser.createdAt = backendUser.createdAt;
                 }
-                return { success: false, message: '用户名或密码错误' };
+                if (backendUser.updatedAt) {
+                    frontendUser.updatedAt = backendUser.updatedAt;
+                }
+                
+                this.currentUser = frontendUser;
+                this.saveData();
+                return frontendUser;
             }
 
             logout() {
@@ -1680,34 +1870,19 @@
                 const today = new Date().toISOString().split('T')[0];
                 const currentMonth = new Date().toISOString().substring(0, 7);
                 
-                const allStats = {
-                    total: todos.length,
-                    done: todos.filter(t => t.status === 1).length,
-                    undone: todos.filter(t => t.status === 0).length
-                };
-                
                 const monthStats = {
                     total: todos.filter(t => t.date && t.date.startsWith(currentMonth)).length,
                     done: todos.filter(t => t.date && t.date.startsWith(currentMonth) && t.status === 1).length,
                     undone: todos.filter(t => t.date && t.date.startsWith(currentMonth) && t.status === 0).length
                 };
                 
-                const todayStats = {
-                    total: todos.filter(t => t.date === today).length,
-                    done: todos.filter(t => t.date === today && t.status === 1).length,
-                    undone: todos.filter(t => t.date === today && t.status === 0).length
-                };
-                
-                return { allStats, monthStats, todayStats };
+                return monthStats;
             }
 
             getBillStats(userId) {
                 const bills = this.getBills(userId);
                 const today = new Date().toISOString().split('T')[0];
                 const currentMonth = new Date().toISOString().substring(0, 7);
-                
-                const allIncome = bills.filter(b => b.type === 1).reduce((sum, b) => sum + b.amount, 0);
-                const allExpense = bills.filter(b => b.type === 2).reduce((sum, b) => sum + b.amount, 0);
                 
                 const monthIncome = bills
                     .filter(b => b.type === 1 && b.date && b.date.startsWith(currentMonth))
@@ -1716,17 +1891,8 @@
                     .filter(b => b.type === 2 && b.date && b.date.startsWith(currentMonth))
                     .reduce((sum, b) => sum + b.amount, 0);
                 
-                const todayIncome = bills
-                    .filter(b => b.type === 1 && b.date === today)
-                    .reduce((sum, b) => sum + b.amount, 0);
-                const todayExpense = bills
-                    .filter(b => b.type === 2 && b.date === today)
-                    .reduce((sum, b) => sum + b.amount, 0);
-                
                 return {
-                    all: { income: allIncome, expense: allExpense },
-                    month: { income: monthIncome, expense: monthExpense },
-                    today: { income: todayIncome, expense: todayExpense }
+                    month: { income: monthIncome, expense: monthExpense }
                 };
             }
 
@@ -1777,18 +1943,45 @@
                 this.selectedDate = this.currentDate.getDate();
                 this.currentMenu = 'todo';
                 
+                // 搜索状态
+                this.todoSearchTerm = '';
+                this.billSearchTerm = '';
+                
+                // 初始化属性
+                this.todoFilter = 'all';
+                this.billFilter = 'all';
+                
                 this.init();
             }
 
             init() {
                 this.cacheElements();
                 this.bindEvents();
-                this.checkAuth();
+                this.setupBackendUser();
                 this.initCalendar();
                 this.setTodayDate();
+                this.loadData();
+            }
+
+            setupBackendUser() {
+                // 从localStorage中获取后端用户信息
+                const backendUserStr = localStorage.getItem('dailyMate_user');
+                if (backendUserStr) {
+                    try {
+                        const backendUser = JSON.parse(backendUserStr);
+                        // 转换为前端格式
+                        this.dataManager.setCurrentUserFromBackend(backendUser);
+                    } catch (error) {
+                        console.error('解析后端用户信息失败:', error);
+                    }
+                }
             }
 
             cacheElements() {
+                // 分类选项卡元素
+                this.todoCategoryTabs = document.querySelectorAll('#todoContent .category-tab');
+                this.billCategoryTabs = document.querySelectorAll('#billContent .category-tab');
+                
                 // 页面元素
                 this.loginCheckPage = document.getElementById('loginCheckPage');
                 this.appPage = document.getElementById('appPage');
@@ -1831,16 +2024,28 @@
                 this.billEmptyState = document.getElementById('billEmptyState');
                 this.addBillBtn = document.getElementById('addBillBtn');
                 
+                // 搜索相关元素
+                this.todoSearchInput = document.getElementById('todoSearch');
+                this.clearTodoSearchBtn = document.getElementById('clearTodoSearch');
+                this.billSearchInput = document.getElementById('billSearch');
+                this.clearBillSearchBtn = document.getElementById('clearBillSearch');
+                
                 // 模态框元素
                 this.todoModal = document.getElementById('todoModal');
                 this.billModal = document.getElementById('billModal');
             }
 
             bindEvents() {
-                // 退出登录按钮
-                this.logoutBtn.addEventListener('click', () => this.handleLogout());
+                // 分类筛选事件
+                this.todoCategoryTabs.forEach(tab => {
+                    tab.addEventListener('click', (e) => this.handleTodoCategoryFilter(e));
+                });
                 
-                // 日历导航按钮
+                this.billCategoryTabs.forEach(tab => {
+                    tab.addEventListener('click', (e) => this.handleBillCategoryFilter(e));
+                });
+                
+                // 日历事件
                 this.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
                 this.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
                 this.calendarMonthEl.addEventListener('click', () => this.showMonthPicker());
@@ -1870,6 +2075,30 @@
                 document.getElementById('todoForm').addEventListener('submit', (e) => this.handleTodoSubmit(e));
                 document.getElementById('billForm').addEventListener('submit', (e) => this.handleBillSubmit(e));
                 
+                // 待办事项搜索事件
+                this.todoSearchInput.addEventListener('input', (e) => {
+                    this.todoSearchTerm = e.target.value.trim().toLowerCase();
+                    this.renderTodoTable();
+                });
+                
+                this.clearTodoSearchBtn.addEventListener('click', () => {
+                    this.todoSearchInput.value = '';
+                    this.todoSearchTerm = '';
+                    this.renderTodoTable();
+                });
+                
+                // 账单搜索事件
+                this.billSearchInput.addEventListener('input', (e) => {
+                    this.billSearchTerm = e.target.value.trim().toLowerCase();
+                    this.renderBillTable();
+                });
+                
+                this.clearBillSearchBtn.addEventListener('click', () => {
+                    this.billSearchInput.value = '';
+                    this.billSearchTerm = '';
+                    this.renderBillTable();
+                });
+                
                 // 点击模态框背景关闭
                 this.todoModal.addEventListener('click', (e) => {
                     if (e.target === this.todoModal) this.hideTodoModal();
@@ -1878,52 +2107,112 @@
                 this.billModal.addEventListener('click', (e) => {
                     if (e.target === this.billModal) this.hideBillModal();
                 });
-            }
-
-            // 认证相关方法
-            checkAuth() {
-                if (this.dataManager.currentUser) {
-                    this.showApp();
-                } else {
-                    this.showLoginCheck();
+                
+                // 退出登录事件
+                this.logoutBtn.addEventListener('click', () => this.handleLogout());
+                
+                // 前往登录按钮
+                if (this.goToLoginBtn) {
+                    this.goToLoginBtn.addEventListener('click', () => {
+                        window.location.href = 'login.html';
+                    });
                 }
             }
 
-            showLoginCheck() {
-                this.loginCheckPage.classList.remove('hidden');
-                this.appPage.classList.add('hidden');
-                
-                // 添加跳转到登录页的事件监听
-                this.goToLoginBtn.addEventListener('click', () => {
-                    window.location.href = 'login.html';
+            // 分类筛选处理方法
+            handleTodoCategoryFilter(e) {
+                const filter = e.currentTarget.getAttribute('data-filter');
+                this.todoFilter = filter;
+                this.todoCategoryTabs.forEach(tab => {
+                    if (tab.getAttribute('data-filter') === filter) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
                 });
+                this.renderTodoTable();
             }
 
-            showApp() {
-                this.loginCheckPage.classList.add('hidden');
-                this.appPage.classList.remove('hidden');
-                this.updateUserInfo();
-                this.loadData();
-                this.updateStats();
-                this.renderTodoTable();
+            handleBillCategoryFilter(e) {
+                const filter = e.currentTarget.getAttribute('data-filter');
+                this.billFilter = filter;
+                this.billCategoryTabs.forEach(tab => {
+                    if (tab.getAttribute('data-filter') === filter) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
                 this.renderBillTable();
             }
-
-            handleLogout() {
-                if (confirm('确定要退出登录吗？')) {
-                    this.dataManager.logout();
-                    this.showNotification('已退出登录');
-                    // 重新检查认证状态，将显示登录检查页面
-                    this.checkAuth();
-                }
+            
+            // 获取指定日期的统计数据
+            getDateStats(dateObj) {
+                if (!this.dataManager.currentUser) return null;
+                const userId = this.dataManager.currentUser.id;
+                const dateStr = this.formatDate(dateObj);
+                
+                // 获取待办事项
+                const todos = this.dataManager.getTodos(userId);
+                const dateTodos = todos.filter(t => t.date === dateStr);
+                const todoStats = {
+                    total: dateTodos.length,
+                    done: dateTodos.filter(t => t.status === 1).length,
+                    undone: dateTodos.filter(t => t.status === 0).length
+                };
+                
+                // 获取账单数据
+                const bills = this.dataManager.getBills(userId);
+                const dateBills = bills.filter(b => b.date === dateStr);
+                const billStats = {
+                    income: dateBills.filter(b => b.type === 1).reduce((sum, b) => sum + b.amount, 0),
+                    expense: dateBills.filter(b => b.type === 2).reduce((sum, b) => sum + b.amount, 0)
+                };
+                
+                return {
+                    todoStats,
+                    billStats,
+                    date: dateStr
+                };
             }
 
-            updateUserInfo() {
-                const user = this.dataManager.currentUser;
-                if (user) {
-                    this.usernameDisplay.textContent = user.username;
-                    this.userAvatar.src = user.avatar;
+            // 格式化日期为 YYYY-MM-DD
+            formatDate(dateObj) {
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+
+            // 更新日期预览卡片
+            updateDatePreview(dateObj) {
+                const stats = this.getDateStats(dateObj);
+                if (!stats) return;
+                
+                const year = dateObj.getFullYear();
+                const month = dateObj.getMonth() + 1;
+                const day = dateObj.getDate();
+                
+                // 更新卡片标题
+                const titleEl = document.getElementById('datePreviewTitle');
+                const today = new Date();
+                const isToday = dateObj.getDate() === today.getDate() && 
+                                dateObj.getMonth() === today.getMonth() && 
+                                dateObj.getFullYear() === today.getFullYear();
+                
+                if (isToday) {
+                    titleEl.textContent = '今日概览';
+                } else {
+                    titleEl.textContent = `${year}年${month}月${day}日预览`;
                 }
+                
+                // 更新数据
+                document.getElementById('todayDone').textContent = stats.todoStats.done;
+                document.getElementById('todayIncome').textContent = stats.billStats.income.toFixed(2);
+                document.getElementById('todayExpense').textContent = stats.billStats.expense.toFixed(2);
+                
+                // 保存当前预览的日期
+                document.getElementById('currentPreviewDate').value = stats.date;
             }
 
             // 日历相关方法
@@ -1940,11 +2229,10 @@
                 // 设置账单默认日期为今天
                 document.getElementById('billDate').value = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                 
-                // 设置待办事项时间默认值（今天下午2点到4点）
+                // 设置待办事项开始时间为当前时间，结束时间为2小时后
                 const now = new Date();
-                const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0);
-                const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 16, 0);
-                
+                const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
+                const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
                 document.getElementById('todoStartTime').value = this.dataManager.convertFromISOString(startTime.toISOString());
                 document.getElementById('todoEndTime').value = this.dataManager.convertFromISOString(endTime.toISOString());
             }
@@ -2066,8 +2354,6 @@
             selectDate(day) {
                 this.selectedDate = day;
                 this.renderCalendar();
-                
-                // 在实际应用中，这里可以加载选中日期的数据
                 const selectedDate = new Date(
                     this.currentDate.getFullYear(), 
                     this.currentDate.getMonth(), 
@@ -2078,16 +2364,17 @@
                 const year = selectedDate.getFullYear();
                 const month = selectedDate.getMonth() + 1;
                 const dayStr = selectedDate.getDate();
-                
                 document.getElementById('billDate').value = `${year}-${String(month).padStart(2, '0')}-${String(dayStr).padStart(2, '0')}`;
                 
-                // 更新待办事项的截止时间（设置为选中日期的下午2-4点）
-                const startTime = new Date(year, month - 1, dayStr, 14, 0);
-                const endTime = new Date(year, month - 1, dayStr, 16, 0);
-                
+                // 更新待办事项的开始时间为选中日期的当前时分，结束时间为2小时后
+                const now = new Date();
+                const startTime = new Date(year, month - 1, dayStr, now.getHours(), now.getMinutes());
+                const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
                 document.getElementById('todoStartTime').value = this.dataManager.convertFromISOString(startTime.toISOString());
                 document.getElementById('todoEndTime').value = this.dataManager.convertFromISOString(endTime.toISOString());
                 
+                // 更新日期预览卡片
+                this.updateDatePreview(selectedDate);
                 this.showNotification(`已选择 ${year}年${month}月${dayStr}日`, 'info');
             }
 
@@ -2143,38 +2430,90 @@
 
             // 数据加载方法
             loadData() {
+                this.updateUserInfo();
                 this.updateStats();
                 this.renderCalendar();
+                // 初始化显示今日预览
+                this.updateDatePreview(new Date());
+                this.renderTodoTable();
+                this.renderBillTable();
+            }
+
+            updateUserInfo() {
+                if (this.dataManager.currentUser) {
+                    this.usernameDisplay.textContent = this.dataManager.currentUser.username;
+                    this.userAvatar.src = this.dataManager.currentUser.avatar;
+                }
             }
 
             updateStats() {
                 if (!this.dataManager.currentUser) return;
-                
                 const userId = this.dataManager.currentUser.id;
                 
                 // 获取待办事项统计
                 const todoStats = this.dataManager.getTodoStats(userId);
-                this.todoDoneEl.textContent = todoStats.monthStats.done;
-                this.todoUndoneEl.textContent = todoStats.monthStats.undone;
-                this.todayDoneEl.textContent = todoStats.todayStats.done;
+                this.todoDoneEl.textContent = todoStats.done;
+                this.todoUndoneEl.textContent = todoStats.undone;
                 
                 // 获取账单统计
                 const billStats = this.dataManager.getBillStats(userId);
                 this.expenseAmountEl.textContent = billStats.month.expense.toFixed(2);
                 this.incomeAmountEl.textContent = billStats.month.income.toFixed(2);
-                this.todayIncomeEl.textContent = billStats.today.income.toFixed(2);
-                this.todayExpenseEl.textContent = billStats.today.expense.toFixed(2);
+                
+                // 更新今日预览（如果当前预览的是今天）
+                const currentPreviewDate = document.getElementById('currentPreviewDate').value;
+                const today = this.formatDate(new Date());
+                if (!currentPreviewDate || currentPreviewDate === today) {
+                    this.updateDatePreview(new Date());
+                }
             }
 
             // 待办事项表格渲染
             renderTodoTable() {
                 if (!this.dataManager.currentUser) return;
+                let todos = this.dataManager.getTodos(this.dataManager.currentUser.id);
                 
-                const todos = this.dataManager.getTodos(this.dataManager.currentUser.id);
+                // 分类筛选
+                if (this.todoFilter === 'done') {
+                    todos = todos.filter(todo => todo.status === 1);
+                } else if (this.todoFilter === 'undone') {
+                    todos = todos.filter(todo => todo.status === 0);
+                }
+                
+                // 搜索筛选
+                if (this.todoSearchTerm) {
+                    const searchTerm = this.todoSearchTerm;
+                    todos = todos.filter(todo => {
+                        const titleMatch = todo.title.toLowerCase().includes(searchTerm);
+                        const contentMatch = todo.content && todo.content.toLowerCase().includes(searchTerm);
+                        const priorityText = { 1: '高', 2: '中', 3: '低' }[todo.priority] || '';
+                        const priorityMatch = priorityText.includes(searchTerm);
+                        const statusText = todo.status === 1 ? '已完成' : '未完成';
+                        const statusMatch = statusText.includes(searchTerm);
+                        
+                        return titleMatch || contentMatch || priorityMatch || statusMatch;
+                    });
+                }
+                
                 this.todoTableBody.innerHTML = '';
                 
                 if (todos.length === 0) {
                     this.todoEmptyState.classList.remove('hidden');
+                    
+                    // 如果没有搜索结果，显示特殊提示
+                    if (this.todoSearchTerm) {
+                        this.todoEmptyState.innerHTML = `
+                            <i class="fas fa-search"></i>
+                            <h3>未找到匹配的待办事项</h3>
+                            <p>请尝试其他搜索关键词</p>
+                        `;
+                    } else {
+                        this.todoEmptyState.innerHTML = `
+                            <i class="fas fa-tasks"></i>
+                            <h3>暂无待办事项</h3>
+                            <p>点击"添加待办"按钮创建您的第一个待办事项</p>
+                        `;
+                    }
                     return;
                 }
                 
@@ -2185,47 +2524,37 @@
                 
                 sortedTodos.forEach(todo => {
                     const row = document.createElement('tr');
-                    
-                    // 优先级文本
-                    const priorityText = {
-                        1: '高',
-                        2: '中',
-                        3: '低'
-                    }[todo.priority] || '中';
-                    
-                    // 状态文本
+                    const priorityText = { 1: '高', 2: '中', 3: '低' }[todo.priority] || '中';
                     const statusText = todo.status === 1 ? '已完成' : '未完成';
-                    
-                    // 归属日期格式化
                     const date = todo.date ? new Date(todo.date).toLocaleDateString('zh-CN') : '';
                     
-                    // 开始时间格式化（如果有）
                     let startTime = '-';
                     if (todo.startTime) {
                         const startDate = new Date(todo.startTime);
-                        startTime = startDate.toLocaleString('zh-CN', {
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
+                        startTime = startDate.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
                     }
                     
-                    // 截止时间格式化（如果有）
                     let endTime = '-';
                     if (todo.endTime) {
                         const endDate = new Date(todo.endTime);
-                        endTime = endDate.toLocaleString('zh-CN', {
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
+                        endTime = endDate.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    }
+                    
+                    // 高亮搜索关键词
+                    let highlightedTitle = todo.title;
+                    let highlightedContent = todo.content || '-';
+                    
+                    if (this.todoSearchTerm) {
+                        const regex = new RegExp(`(${this.todoSearchTerm})`, 'gi');
+                        highlightedTitle = todo.title.replace(regex, '<mark class="search-highlight">$1</mark>');
+                        if (todo.content) {
+                            highlightedContent = todo.content.replace(regex, '<mark class="search-highlight">$1</mark>');
+                        }
                     }
                     
                     row.innerHTML = `
-                        <td>${todo.title}</td>
-                        <td>${todo.content || '-'}</td>
+                        <td>${highlightedTitle}</td>
+                        <td>${highlightedContent}</td>
                         <td><span class="priority-badge priority-${todo.priority}">${priorityText}</span></td>
                         <td><span class="status-badge status-${todo.status}">${statusText}</span></td>
                         <td>${date}</td>
@@ -2236,20 +2565,58 @@
                             <button class="action-btn delete-btn" onclick="app.deleteTodo(${todo.id})">删除</button>
                         </td>
                     `;
-                    
                     this.todoTableBody.appendChild(row);
                 });
+                
+                // 显示搜索结果统计
+                this.showSearchStats('todo', todos.length);
             }
 
             // 账单表格渲染
             renderBillTable() {
                 if (!this.dataManager.currentUser) return;
+                let bills = this.dataManager.getBills(this.dataManager.currentUser.id);
                 
-                const bills = this.dataManager.getBills(this.dataManager.currentUser.id);
+                // 分类筛选
+                if (this.billFilter === 'income') {
+                    bills = bills.filter(bill => bill.type === 1);
+                } else if (this.billFilter === 'expense') {
+                    bills = bills.filter(bill => bill.type === 2);
+                }
+                
+                // 搜索筛选
+                if (this.billSearchTerm) {
+                    const searchTerm = this.billSearchTerm;
+                    bills = bills.filter(bill => {
+                        const categoryMatch = bill.category.toLowerCase().includes(searchTerm);
+                        const remarkMatch = bill.remark && bill.remark.toLowerCase().includes(searchTerm);
+                        const amountMatch = bill.amount.toString().includes(searchTerm);
+                        const typeText = bill.type === 1 ? '收入' : '支出';
+                        const typeMatch = typeText.includes(searchTerm);
+                        
+                        return categoryMatch || remarkMatch || amountMatch || typeMatch;
+                    });
+                }
+                
                 this.billTableBody.innerHTML = '';
                 
                 if (bills.length === 0) {
                     this.billEmptyState.classList.remove('hidden');
+                    
+                    // 如果没有搜索结果，显示特殊提示
+                    if (this.billSearchTerm) {
+                        this.billEmptyState.innerHTML = `
+                            <i class="fas fa-search"></i>
+                            <h3>未找到匹配的账单记录</h3>
+                            <p>请尝试其他搜索关键词</p>
+                        `;
+                    } else {
+                        this.billEmptyState.innerHTML = `
+                            <i class="fas fa-money-bill-wave"></i>
+                            <h3>暂无账单记录</h3>
+                            <p>点击"添加账单"按钮记录您的第一笔收支</p>
+                        `;
+                    }
                     return;
                 }
                 
@@ -2260,24 +2627,29 @@
                 
                 sortedBills.forEach(bill => {
                     const row = document.createElement('tr');
-                    
-                    // 类型文本
                     const typeText = bill.type === 1 ? '收入' : '支出';
-                    
-                    // 日期格式化
                     const date = bill.date ? new Date(bill.date).toLocaleDateString('zh-CN') : '';
-                    const createdAt = bill.createdAt ? new Date(bill.createdAt).toLocaleString('zh-CN', {
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    }) : '';
+                    const createdAt = bill.createdAt ? new Date(bill.createdAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+                    
+                    // 高亮搜索关键词
+                    let highlightedCategory = bill.category;
+                    let highlightedRemark = bill.remark || '-';
+                    let highlightedAmount = bill.amount.toFixed(2);
+                    
+                    if (this.billSearchTerm) {
+                        const regex = new RegExp(`(${this.billSearchTerm})`, 'gi');
+                        highlightedCategory = bill.category.replace(regex, '<mark class="search-highlight">$1</mark>');
+                        if (bill.remark) {
+                            highlightedRemark = bill.remark.replace(regex, '<mark class="search-highlight">$1</mark>');
+                        }
+                        highlightedAmount = bill.amount.toFixed(2).replace(regex, '<mark class="search-highlight">$1</mark>');
+                    }
                     
                     row.innerHTML = `
                         <td><span class="type-badge type-${bill.type}">${typeText}</span></td>
-                        <td>${bill.category}</td>
-                        <td>${bill.amount.toFixed(2)}</td>
-                        <td>${bill.remark || '-'}</td>
+                        <td>${highlightedCategory}</td>
+                        <td>${highlightedAmount}</td>
+                        <td>${highlightedRemark}</td>
                         <td>${date}</td>
                         <td>${createdAt}</td>
                         <td>
@@ -2285,9 +2657,47 @@
                             <button class="action-btn delete-btn" onclick="app.deleteBill(${bill.id})">删除</button>
                         </td>
                     `;
-                    
                     this.billTableBody.appendChild(row);
                 });
+                
+                // 显示搜索结果统计
+                this.showSearchStats('bill', bills.length);
+            }
+
+            // 显示搜索结果统计
+            showSearchStats(type, resultCount) {
+                // 移除现有的统计信息
+                const existingStats = document.querySelectorAll(`#${type}Content .search-stats`);
+                existingStats.forEach(stat => stat.remove());
+                
+                // 如果有搜索词，显示统计信息
+                const searchTerm = type === 'todo' ? this.todoSearchTerm : this.billSearchTerm;
+                if (searchTerm) {
+                    const searchContainer = document.querySelector(`#${type}Content .search-container`);
+                    const statsDiv = document.createElement('div');
+                    statsDiv.className = 'search-stats';
+                    statsDiv.innerHTML = `
+                        <span>找到 <strong>${resultCount}</strong> 个匹配"${searchTerm}"的结果</span>
+                        <button class="clear-search-btn-small" onclick="app.clear${type === 'todo' ? 'Todo' : 'Bill'}Search()">
+                            清除搜索
+                        </button>
+                    `;
+                    searchContainer.appendChild(statsDiv);
+                }
+            }
+
+            // 清除待办事项搜索
+            clearTodoSearch() {
+                this.todoSearchInput.value = '';
+                this.todoSearchTerm = '';
+                this.renderTodoTable();
+            }
+
+            // 清除账单搜索
+            clearBillSearch() {
+                this.billSearchInput.value = '';
+                this.billSearchTerm = '';
+                this.renderBillTable();
             }
 
             // 待办事项模态框方法
@@ -2337,11 +2747,10 @@
                 document.getElementById('todoPriority').value = '2';
                 document.getElementById('todoStatus').value = '0';
                 
-                // 设置默认时间（今天下午2点到4点）
+                // 设置默认时间：开始时间为当前时间，结束时间为2小时后
                 const now = new Date();
-                const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0);
-                const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 16, 0);
-                
+                const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
+                const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
                 document.getElementById('todoStartTime').value = this.dataManager.convertFromISOString(startTime.toISOString());
                 document.getElementById('todoEndTime').value = this.dataManager.convertFromISOString(endTime.toISOString());
             }
@@ -2411,6 +2820,12 @@
                         this.hideTodoModal();
                         this.renderTodoTable();
                         this.updateStats();
+                        // 更新预览卡片
+                        const previewDateStr = document.getElementById('currentPreviewDate').value;
+                        if (previewDateStr) {
+                            const previewDate = new Date(previewDateStr);
+                            this.updateDatePreview(previewDate);
+                        }
                         this.renderCalendar();
                     }
                 } else {
@@ -2421,6 +2836,12 @@
                     this.hideTodoModal();
                     this.renderTodoTable();
                     this.updateStats();
+                    // 更新预览卡片
+                    const previewDateStr = document.getElementById('currentPreviewDate').value;
+                    if (previewDateStr) {
+                        const previewDate = new Date(previewDateStr);
+                        this.updateDatePreview(previewDate);
+                    }
                     this.renderCalendar();
                 }
             }
@@ -2436,6 +2857,12 @@
                         this.showNotification('待办事项已删除');
                         this.renderTodoTable();
                         this.updateStats();
+                        // 更新预览卡片
+                        const previewDateStr = document.getElementById('currentPreviewDate').value;
+                        if (previewDateStr) {
+                            const previewDate = new Date(previewDateStr);
+                            this.updateDatePreview(previewDate);
+                        }
                         this.renderCalendar();
                     }
                 }
@@ -2545,6 +2972,12 @@
                         this.hideBillModal();
                         this.renderBillTable();
                         this.updateStats();
+                        // 更新预览卡片
+                        const previewDateStr = document.getElementById('currentPreviewDate').value;
+                        if (previewDateStr) {
+                            const previewDate = new Date(previewDateStr);
+                            this.updateDatePreview(previewDate);
+                        }
                         this.renderCalendar();
                     }
                 } else {
@@ -2554,6 +2987,12 @@
                     this.hideBillModal();
                     this.renderBillTable();
                     this.updateStats();
+                    // 更新预览卡片
+                    const previewDateStr = document.getElementById('currentPreviewDate').value;
+                    if (previewDateStr) {
+                        const previewDate = new Date(previewDateStr);
+                        this.updateDatePreview(previewDate);
+                    }
                     this.renderCalendar();
                 }
             }
@@ -2569,8 +3008,30 @@
                         this.showNotification('账单已删除');
                         this.renderBillTable();
                         this.updateStats();
+                        // 更新预览卡片
+                        const previewDateStr = document.getElementById('currentPreviewDate').value;
+                        if (previewDateStr) {
+                            const previewDate = new Date(previewDateStr);
+                            this.updateDatePreview(previewDate);
+                        }
                         this.renderCalendar();
                     }
+                }
+            }
+
+            // 退出登录
+            handleLogout() {
+                if (confirm('确定要退出登录吗？')) {
+                    // 清除所有登录信息
+                    localStorage.removeItem('dailyMate_token');
+                    localStorage.removeItem('dailyMate_user');
+                    localStorage.removeItem('dailyMate_currentUser');
+                    
+                    this.showNotification('已退出登录');
+                    // 跳转到登录页
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1000);
                 }
             }
 
@@ -2606,14 +3067,71 @@
             }
         }
 
-        // 初始化应用
-        let app;
-        document.addEventListener('DOMContentLoaded', () => {
-            app = new DailyMateApp();
-            
-            // 将app暴露到全局，方便从HTML调用
-            window.app = app;
-        });
+        // DOM加载完成后执行
+// DOM加载完成后执行
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM加载完成，检查登录状态...');
+    
+    // 直接从 localStorage 获取 token 和 user
+    const token = localStorage.getItem('dailyMate_token');
+    const userStr = localStorage.getItem('dailyMate_user');
+    
+    console.log('Token 存在:', !!token);
+    console.log('User 存在:', !!userStr);
+    
+    const loginCheckPage = document.getElementById('loginCheckPage');
+    const appPage = document.getElementById('appPage');
+    const goToLoginBtn = document.getElementById('goToLoginBtn');
+
+    // 跳转到登录页
+    if (goToLoginBtn) {
+        goToLoginBtn.onclick = () => {
+            window.location.href = 'login.html';
+        };
+    }
+
+    // 调试：打印详细登录信息
+    if (userStr) {
+        try {
+            const user = JSON.parse(userStr);
+            console.log('用户ID:', user.id);
+            console.log('用户名:', user.username);
+        } catch (e) {
+            console.error('解析用户信息失败:', e);
+        }
+    }
+
+    // 检查是否有token和user（user可以是空对象，但必须有值）
+    if (token && userStr) {
+        console.log('登录状态验证通过，显示主应用页面');
+        
+        // 隐藏登录检查页面，显示主应用页面
+        if (loginCheckPage) loginCheckPage.classList.add('hidden');
+        if (appPage) {
+            appPage.classList.remove('hidden');
+            console.log('主应用页面已显示');
+        }
+        
+        // 初始化主应用
+        try {
+            console.log('正在初始化 DailyMateApp...');
+            window.app = new DailyMateApp();
+            console.log('DailyMateApp 初始化成功');
+        } catch (error) {
+            console.error('初始化应用失败:', error);
+            // 如果初始化失败，跳转到登录页
+            localStorage.removeItem('dailyMate_token');
+            localStorage.removeItem('dailyMate_user');
+            localStorage.removeItem('dailyMate_currentUser');
+            window.location.href = 'login.html';
+        }
+    } else {
+        console.log('登录状态验证失败，显示登录检查页面');
+        // 没有登录信息，显示登录检查页面
+        if (loginCheckPage) loginCheckPage.classList.remove('hidden');
+        if (appPage) appPage.classList.add('hidden');
+    }
+});
     </script>
 </body>
 </html>
