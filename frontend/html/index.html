@@ -1,0 +1,2619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyMate - 个人日常管理工具</title>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            min-height: 100vh;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* 登录检查页面 */
+        .login-check {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+        }
+        
+        .login-check h1 {
+            font-size: 48px;
+            background: linear-gradient(135deg, #4299e1, #38b2ac);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            font-weight: 800;
+        }
+        
+        .login-check p {
+            font-size: 18px;
+            color: #718096;
+            margin-bottom: 40px;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+        
+        .login-check-btn {
+            background: linear-gradient(135deg, #4299e1 0%, #38b2ac 100%);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(66, 153, 225, 0.3);
+        }
+        
+        .login-check-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(66, 153, 225, 0.4);
+        }
+        
+        /* 主应用样式 */
+        .full-height-container {
+            height: 100vh;
+            min-height: 100vh;
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            overflow: hidden;
+            font-family: 'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            width: 100%;
+        }
+
+        /* 顶部区域 */
+        .dailymate-header {
+            height: 50vh;
+            min-height: 400px;
+            width: 100%;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(66, 153, 225, 0.12);
+            padding: 0;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .dailymate-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4299e1, #38b2ac, #9f7aea);
+            z-index: 2;
+        }
+
+        .header-row {
+            width: 100%;
+            display: flex;
+            box-sizing: border-box;
+        }
+
+        .header-row-top {
+            height: 25%;
+            min-height: 70px;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 50px;
+            border-bottom: 1px solid #edf2f7;
+            background: #ffffff;
+        }
+
+        .header-title {
+            font-size: 36px;
+            font-weight: 800;
+            color: #4299e1;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            text-shadow: 0 2px 4px rgba(66, 153, 225, 0.1);
+        }
+
+        .logo-img {
+            width: 48px;
+            height: 48px;
+            margin-right: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .avatar-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e2e8f0;
+        }
+
+        .user-name {
+            font-size: 18px;
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #4299e1 0%, #38b2ac 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 22px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.2);
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(66, 153, 225, 0.3);
+        }
+
+        /* 日历+卡片区域 */
+        .header-row-bottom {
+            height: 75%;
+            min-height: 320px;
+            align-items: stretch;
+            justify-content: space-between;
+            padding: 20px 50px;
+            gap: 40px;
+        }
+
+        /* 日历区域 */
+        .calendar-block {
+            flex: 1.8;
+            min-width: 350px;
+            max-width: 480px;
+            background: linear-gradient(145deg, #ffffff, #f0f7ff);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(67, 153, 225, 0.15);
+            padding: 18px 15px 15px 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: stretch;
+            border: 1px solid rgba(66, 153, 225, 0.1);
+            overflow: hidden;
+        }
+
+        .calendar-month-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+
+        .calendar-month {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2d3748;
+            cursor: pointer;
+            padding: 6px 14px;
+            border-radius: 12px;
+            transition: all 0.3s;
+            background: rgba(66, 153, 225, 0.08);
+            min-width: 160px;
+            text-align: center;
+        }
+
+        .calendar-month:hover {
+            background: rgba(66, 153, 225, 0.15);
+            transform: scale(1.05);
+        }
+
+        .calendar-nav-btn {
+            background: #ffffff;
+            border: 2px solid #e0e7ff;
+            color: #4299e1;
+            font-size: 14px;
+            width: 32px;
+            height: 32px;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(66, 153, 225, 0.1);
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .calendar-nav-btn:hover {
+            background: #4299e1;
+            color: #ffffff;
+            border-color: #4299e1;
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.25);
+        }
+
+        /* 自定义迷你日历样式 */
+        .mini-calendar-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .mini-calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: #4a5568;
+        }
+
+        .mini-calendar-weekday {
+            text-align: center;
+            font-size: 12px;
+            padding: 6px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #4299e1;
+        }
+
+        .mini-calendar-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 4px;
+            min-height: 0;
+        }
+
+        .mini-calendar-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background-color: #f8fafc;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2d3748;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            padding: 4px 0;
+            min-height: 30px;
+        }
+
+        .mini-calendar-cell:hover {
+            background-color: #e0f2fe;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(66, 153, 225, 0.15);
+        }
+
+        .mini-calendar-cell.today {
+            background: linear-gradient(135deg, #4299e1, #38b2ac);
+            color: white !important;
+            font-weight: 800;
+            box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3);
+            font-size: 14px;
+        }
+
+        .mini-calendar-cell.selected {
+            background: linear-gradient(135deg, #9f7aea, #4299e1);
+            color: white !important;
+            font-weight: 800;
+            box-shadow: 0 2px 8px rgba(159, 122, 234, 0.3);
+            font-size: 14px;
+        }
+
+        .mini-calendar-cell.other-month {
+            color: #cbd5e0 !important;
+            background-color: #f7fafc;
+            cursor: default;
+        }
+
+        .mini-calendar-cell.other-month:hover {
+            background-color: #f7fafc;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 事件点样式 */
+        .mini-dot-container {
+            display: flex;
+            gap: 2px;
+            margin-top: 2px;
+            justify-content: center;
+        }
+
+        .mini-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* 数据卡片区域 */
+        .data-card-block {
+            flex: 2.2;
+            display: flex;
+            gap: 25px;
+            align-items: stretch;
+            justify-content: space-between;
+        }
+
+        .data-card {
+            flex: 1;
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            border-radius: 18px;
+            padding: 24px 20px;
+            color: #333;
+            box-shadow: 0 8px 25px rgba(67, 153, 225, 0.12);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            min-width: 180px;
+            min-height: 120px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(66, 153, 225, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .data-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(66, 153, 225, 0.2);
+        }
+
+        .data-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+            z-index: 1;
+        }
+
+        .card-todo {
+            --gradient-start: #4299e1;
+            --gradient-end: #38b2ac;
+        }
+
+        .card-bill {
+            --gradient-start: #38b2ac;
+            --gradient-end: #48bb78;
+        }
+
+        .card-today {
+            --gradient-start: #9f7aea;
+            --gradient-end: #4299e1;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #2d3748;
+            position: relative;
+            padding-bottom: 10px;
+            z-index: 1;
+            width: 100%;
+        }
+
+        .card-title::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 35px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .data-card:hover .card-title::after {
+            width: 65px;
+        }
+
+        .card-content {
+            font-size: 15px;
+            line-height: 2;
+            color: #4a5568;
+            z-index: 1;
+            width: 100%;
+        }
+
+        .text-green {
+            color: #38b2ac;
+            font-weight: 800;
+            font-size: 18px;
+            margin: 0 4px;
+            text-shadow: 0 0 8px rgba(56, 178, 172, 0.25);
+        }
+
+        .text-red {
+            color: #e53e3e;
+            font-weight: 800;
+            font-size: 18px;
+            margin: 0 4px;
+            text-shadow: 0 0 8px rgba(229, 62, 62, 0.25);
+        }
+
+        .text-blue {
+            color: #4299e1;
+            font-weight: 800;
+            font-size: 18px;
+            margin: 0 4px;
+            text-shadow: 0 0 8px rgba(66, 153, 225, 0.25);
+        }
+
+        /* 主内容区域 */
+        .main-content-container {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            background: #f8fafc;
+            display: flex;
+        }
+
+        .sidebar-menu {
+            width: 200px;
+            background: #ffffff;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
+            z-index: 1;
+            padding-top: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar-menu ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-menu li {
+            padding: 0;
+        }
+
+        .menu-item, .menu-submenu-title {
+            height: 56px;
+            line-height: 56px;
+            font-size: 16px;
+            color: #4a5568;
+            transition: all 0.3s;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .menu-item:hover, .menu-submenu-title:hover {
+            background-color: #e0f2fe;
+            color: #4299e1;
+            transform: translateX(4px);
+        }
+
+        .menu-item.active {
+            background: linear-gradient(90deg, #e0f2fe, #ffffff);
+            color: #4299e1;
+            font-weight: 600;
+            border-left: 4px solid #4299e1;
+        }
+
+        .menu-icon {
+            font-size: 18px;
+            margin-right: 12px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .menu-submenu {
+            background-color: #f8fafc;
+        }
+
+        .menu-group-title {
+            padding: 8px 20px;
+            font-size: 12px;
+            color: #a0aec0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            background: #f8fafc;
+            overflow-y: auto;
+        }
+
+        /* 数据管理页面样式 */
+        .data-management {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .data-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .data-header h2 {
+            color: #2d3748;
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4299e1, #38b2ac);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .add-btn {
+            background: linear-gradient(135deg, #4299e1 0%, #38b2ac 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(66, 153, 225, 0.3);
+        }
+
+        .data-table-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            padding: 18px 20px;
+            text-align: left;
+            color: #2d3748;
+            font-weight: 700;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .data-table td {
+            padding: 16px 20px;
+            border-bottom: 1px solid #edf2f7;
+            color: #4a5568;
+        }
+
+        .data-table tr:hover {
+            background-color: #f7fafc;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-0 {
+            background-color: #fed7d7;
+            color: #c53030;
+        }
+
+        .status-1 {
+            background-color: #c6f6d5;
+            color: #276749;
+        }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .priority-1 {
+            background-color: #fed7d7;
+            color: #c53030;
+        }
+
+        .priority-2 {
+            background-color: #fefcbf;
+            color: #744210;
+        }
+
+        .priority-3 {
+            background-color: #c6f6d5;
+            color: #276749;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .type-1 {
+            background-color: #c6f6d5;
+            color: #276749;
+        }
+
+        .type-2 {
+            background-color: #fed7d7;
+            color: #c53030;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .edit-btn {
+            background-color: #e0f2fe;
+            color: #4299e1;
+        }
+
+        .delete-btn {
+            background-color: #fed7d7;
+            color: #c53030;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #cbd5e0;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #4a5568;
+        }
+
+        /* 优化模态框样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+        }
+
+        .modal.show .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* 优化模态框头部 */
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e2e8f0;
+            position: relative;
+        }
+
+        .modal-header h3 {
+            font-size: 24px;
+            color: #2d3748;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4299e1, #38b2ac);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #a0aec0;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background-color: #f7fafc;
+            color: #e53e3e;
+            transform: rotate(90deg);
+        }
+
+        /* 优化表单样式 */
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-col {
+            flex: 1;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group label.required:after {
+            content: '*';
+            color: #e53e3e;
+            margin-left: 4px;
+            opacity: 0.7;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #2d3748;
+            transition: all 0.3s;
+            background: #f8fafc;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4299e1;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .form-input:hover {
+            border-color: #cbd5e0;
+        }
+
+        select.form-input {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%234a5568' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 40px;
+            cursor: pointer;
+        }
+
+        textarea.form-input {
+            min-height: 80px;
+            resize: vertical;
+            line-height: 1.5;
+        }
+
+        /* 优化表单底部按钮 */
+        .form-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-size: 14px;
+            min-width: 100px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-cancel {
+            background: #edf2f7;
+            color: #4a5568;
+            border: 2px solid transparent;
+        }
+
+        .btn-cancel:hover {
+            background: #e2e8f0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #4299e1 0%, #38b2ac 100%);
+            color: white;
+            border: 2px solid transparent;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(66, 153, 225, 0.3);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        /* 优化错误状态 */
+        .form-input.error {
+            border-color: #e53e3e;
+            background-color: #fff5f5;
+        }
+
+        .form-input.error:focus {
+            box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+        }
+
+        .error-message {
+            color: #e53e3e;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .form-input.error + .error-message {
+            display: block;
+        }
+
+        /* 优化datetime-local输入框 */
+        input[type="datetime-local"].form-input {
+            position: relative;
+        }
+
+        input[type="datetime-local"].form-input::-webkit-calendar-picker-indicator {
+            position: absolute;
+            right: 16px;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        input[type="datetime-local"].form-input::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+
+        /* 优化数字输入框 */
+        input[type="number"].form-input {
+            appearance: textfield;
+        }
+
+        input[type="number"].form-input::-webkit-inner-spin-button,
+        input[type="number"].form-input::-webkit-outer-spin-button {
+            opacity: 0.6;
+            cursor: pointer;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 1200px) {
+            .header-row-bottom {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .calendar-block {
+                max-width: 100%;
+            }
+            
+            .data-card-block {
+                width: 100%;
+            }
+            
+            .data-management {
+                padding: 0 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-row-top {
+                padding: 0 20px;
+            }
+            
+            .header-row-bottom {
+                padding: 20px;
+            }
+            
+            .header-title {
+                font-size: 28px;
+            }
+            
+            .data-card-block {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .main-content-container {
+                flex-direction: column;
+            }
+            
+            .sidebar-menu {
+                width: 100%;
+                height: auto;
+                padding-top: 10px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .data-table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            .modal-content {
+                padding: 20px;
+                width: 95%;
+                margin: 20px;
+            }
+            
+            .form-footer {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .modal-header h3 {
+                font-size: 20px;
+            }
+        }
+
+        @media (max-height: 700px) {
+            .modal-content {
+                max-height: 90vh;
+            }
+        }
+
+        /* 通知样式 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #38b2ac;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+            max-width: 300px;
+            font-weight: 500;
+        }
+
+        .notification.error {
+            background: #e53e3e;
+        }
+
+        .notification.info {
+            background: #4299e1;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        /* 辅助类 */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录检查页面（如果未登录则显示） -->
+    <div id="loginCheckPage" class="login-check">
+        <h1>DailyMate</h1>
+        <p>请先登录以访问您的个人日常管理工具</p>
+        <button id="goToLoginBtn" class="login-check-btn">前往登录</button>
+    </div>
+
+    <!-- 主应用页面（如果已登录则显示） -->
+    <div id="appPage" class="full-height-container hidden">
+        <!-- 顶部区域 -->
+        <header class="dailymate-header">
+            <div class="header-row header-row-top">
+                <div class="header-title">
+                    <img src="https://img.icons8.com/color/48/000000/task--v1.png" alt="Logo" class="logo-img">
+                    DailyMate
+                </div>
+                <div class="user-info">
+                    <img id="userAvatar" src="https://img.icons8.com/color/48/000000/user-male-circle--v2.png" alt="用户头像" class="avatar-img">
+                    <span id="usernameDisplay" class="user-name">用户名</span>
+                    <button id="logoutBtn" class="logout-btn">退出登录</button>
+                </div>
+            </div>
+            <div class="header-row header-row-bottom">
+                <!-- 日历区域 -->
+                <div class="calendar-block">
+                    <div class="calendar-month-bar">
+                        <button id="prevMonthBtn" class="calendar-nav-btn" aria-label="上个月" title="上个月"><i class="fas fa-chevron-left"></i></button>
+                        <div id="calendarMonth" class="calendar-month"></div>
+                        <button id="nextMonthBtn" class="calendar-nav-btn" aria-label="下个月" title="下个月"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="mini-calendar-container">
+                        <div class="mini-calendar-weekdays">
+                            <div class="mini-calendar-weekday">一</div>
+                            <div class="mini-calendar-weekday">二</div>
+                            <div class="mini-calendar-weekday">三</div>
+                            <div class="mini-calendar-weekday">四</div>
+                            <div class="mini-calendar-weekday">五</div>
+                            <div class="mini-calendar-weekday">六</div>
+                            <div class="mini-calendar-weekday">日</div>
+                        </div>
+                        <div id="calendarGrid" class="mini-calendar-grid"></div>
+                    </div>
+                </div>
+
+                <!-- 数据卡片区域 -->
+                <div class="data-card-block">
+                    <div class="data-card card-todo">
+                        <div class="card-title">待办事项</div>
+                        <div class="card-content">
+                            本月已完成：<span id="todoDone" class="text-green">0</span>项<br>
+                            本月未完成：<span id="todoUndone" class="text-red">0</span>项
+                        </div>
+                    </div>
+                    <div class="data-card card-bill">
+                        <div class="card-title">账单统计</div>
+                        <div class="card-content">
+                            本月支出：<span id="expenseAmount" class="text-red">0.00</span>元<br>
+                            本月收入：<span id="incomeAmount" class="text-green">0.00</span>元
+                        </div>
+                    </div>
+                    <div class="data-card card-today">
+                        <div class="card-title">今日概览</div>
+                        <div class="card-content">
+                            待办完成：<span id="todayDone" class="text-blue">0</span>项<br>
+                            今日收入：<span id="todayIncome" class="text-green">0.00</span>元<br>
+                            今日支出：<span id="todayExpense" class="text-red">0.00</span>元
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容区域 -->
+        <div class="main-content-container">
+            <!-- 侧边栏菜单 -->
+            <nav class="sidebar-menu">
+                <ul>
+                    <li class="menu-group-title">主要功能</li>
+                    <li>
+                        <a href="#" class="menu-item active" data-menu="todo">
+                            <i class="menu-icon fas fa-tasks"></i>
+                            <span>待办事项管理</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" class="menu-item" data-menu="bill">
+                            <i class="menu-icon fas fa-money-bill-wave"></i>
+                            <span>账单管理</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- 主内容区域 -->
+            <div class="main-content">
+                <!-- 待办事项管理内容 -->
+                <div id="todoContent" class="data-management">
+                    <div class="data-header">
+                        <h2>待办事项管理</h2>
+                        <button id="addTodoBtn" class="add-btn">
+                            <i class="fas fa-plus"></i> 添加待办
+                        </button>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>标题</th>
+                                    <th>内容</th>
+                                    <th>优先级</th>
+                                    <th>状态</th>
+                                    <th>归属日期</th>
+                                    <th>开始时间</th>
+                                    <th>截止时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="todoTableBody">
+                                <!-- 数据将通过JavaScript动态填充 -->
+                            </tbody>
+                        </table>
+                        <div id="todoEmptyState" class="empty-state hidden">
+                            <i class="fas fa-tasks"></i>
+                            <h3>暂无待办事项</h3>
+                            <p>点击"添加待办"按钮创建您的第一个待办事项</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 账单管理内容 -->
+                <div id="billContent" class="data-management hidden">
+                    <div class="data-header">
+                        <h2>账单管理</h2>
+                        <button id="addBillBtn" class="add-btn">
+                            <i class="fas fa-plus"></i> 添加账单
+                        </button>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>类型</th>
+                                    <th>分类</th>
+                                    <th>金额</th>
+                                    <th>备注</th>
+                                    <th>日期</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="billTableBody">
+                                <!-- 数据将通过JavaScript动态填充 -->
+                            </tbody>
+                        </table>
+                        <div id="billEmptyState" class="empty-state hidden">
+                            <i class="fas fa-money-bill-wave"></i>
+                            <h3>暂无账单记录</h3>
+                            <p>点击"添加账单"按钮记录您的第一笔收支</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 待办事项模态框 -->
+    <div id="todoModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="todoModalTitle">添加待办事项</h3>
+                <button id="closeTodoModal" class="modal-close">&times;</button>
+            </div>
+            <form id="todoForm">
+                <input type="hidden" id="todoId" value="">
+                <div class="form-group">
+                    <label for="todoTitle" class="required">标题</label>
+                    <input type="text" id="todoTitle" class="form-input" placeholder="请输入待办事项标题" required>
+                </div>
+                <div class="form-group">
+                    <label for="todoContentInput">内容描述</label>
+                    <textarea id="todoContentInput" class="form-input" placeholder="请输入待办事项的具体内容（可选）"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="todoPriority">优先级</label>
+                            <select id="todoPriority" class="form-input">
+                                <option value="1">高</option>
+                                <option value="2" selected>中</option>
+                                <option value="3">低</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="todoStatus">状态</label>
+                            <select id="todoStatus" class="form-input">
+                                <option value="0" selected>未完成</option>
+                                <option value="1">已完成</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="todoStartTime">开始时间</label>
+                            <input type="datetime-local" id="todoStartTime" class="form-input">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="todoEndTime" class="required">计划截止时间</label>
+                            <input type="datetime-local" id="todoEndTime" class="form-input" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-footer">
+                    <button type="button" id="cancelTodoBtn" class="btn btn-cancel">取消</button>
+                    <button type="submit" class="btn btn-submit">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 账单模态框 -->
+    <div id="billModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="billModalTitle">添加账单</h3>
+                <button id="closeBillModal" class="modal-close">&times;</button>
+            </div>
+            <form id="billForm">
+                <input type="hidden" id="billId" value="">
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="billType" class="required">类型</label>
+                            <select id="billType" class="form-input">
+                                <option value="1">收入</option>
+                                <option value="2" selected>支出</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="billCategory" class="required">分类</label>
+                            <select id="billCategory" class="form-input">
+                                <option value="工资收入" selected>工资收入</option>
+                                <option value="其他收入">其他收入</option>
+                                <option value="餐饮">餐饮</option>
+                                <option value="购物">购物</option>
+                                <option value="交通">交通</option>
+                                <option value="住宿">住宿</option>
+                                <option value="娱乐">娱乐</option>
+                                <option value="医疗">医疗</option>
+                                <option value="教育">教育</option>
+                                <option value="其他支出">其他支出</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="billAmount" class="required">金额</label>
+                    <input type="number" id="billAmount" class="form-input" placeholder="请输入金额" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="billRemark">备注</label>
+                    <input type="text" id="billRemark" class="form-input" placeholder="请输入备注（可选）">
+                </div>
+                <div class="form-group">
+                    <label for="billDate" class="required">日期</label>
+                    <input type="date" id="billDate" class="form-input" required>
+                </div>
+                <div class="form-footer">
+                    <button type="button" id="cancelBillBtn" class="btn btn-cancel">取消</button>
+                    <button type="submit" class="btn btn-submit">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 数据模型类定义
+        class User {
+            constructor(id, username, password, email = '', avatar = '', isDelete = 0) {
+                this.id = id;
+                this.username = username;
+                this.password = password;
+                this.email = email;
+                this.avatar = avatar || 'https://img.icons8.com/color/48/000000/user-male-circle--v2.png';
+                this.isDelete = isDelete;
+                this.createdAt = new Date().toISOString();
+                this.updatedAt = new Date().toISOString();
+            }
+        }
+
+        // 更新Todo类
+        class Todo {
+            constructor(id, userId, title, content = '', priority = 2, status = 0, startTime = '', endTime = '', finishTime = '') {
+                this.id = id;
+                this.userId = userId;
+                this.title = title;
+                this.content = content;
+                this.priority = priority;
+                this.status = status;
+                this.startTime = startTime;
+                this.endTime = endTime;
+                this.finishTime = finishTime;
+                this.isDelete = 0;
+                this.createdAt = new Date().toISOString();
+                this.updatedAt = new Date().toISOString();
+                
+                this.date = this.extractDateFromEndTime(endTime);
+            }
+            
+            extractDateFromEndTime(endTime) {
+                if (!endTime) return '';
+                
+                try {
+                    const dateObj = new Date(endTime);
+                    if (isNaN(dateObj.getTime())) return '';
+                    
+                    const year = dateObj.getFullYear();
+                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const day = String(dateObj.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                } catch (error) {
+                    console.error('提取日期失败:', error);
+                    return '';
+                }
+            }
+        }
+
+        class Bill {
+            constructor(id, userId, type = 2, category = '其他支出', amount = 0, remark = '', date) {
+                this.id = id;
+                this.userId = userId;
+                this.type = type;
+                this.category = category;
+                this.amount = amount;
+                this.remark = remark;
+                this.date = date || new Date().toISOString().split('T')[0];
+                this.isDelete = 0;
+                this.createdAt = new Date().toISOString();
+                this.updatedAt = new Date().toISOString();
+            }
+        }
+
+        // 数据存储管理器
+        class DataManager {
+            constructor() {
+                this.initStorage();
+                this.loadData();
+            }
+
+            initStorage() {
+                if (!localStorage.getItem('dailyMate_users')) {
+                    // 创建一个默认用户用于演示
+                    const defaultUser = new User(1, 'demo', 'demo123', 'demo@example.com');
+                    localStorage.setItem('dailyMate_users', JSON.stringify([defaultUser]));
+                }
+                if (!localStorage.getItem('dailyMate_todos')) {
+                    localStorage.setItem('dailyMate_todos', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('dailyMate_bills')) {
+                    localStorage.setItem('dailyMate_bills', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('dailyMate_currentUser')) {
+                    localStorage.setItem('dailyMate_currentUser', JSON.stringify(null));
+                }
+            }
+
+            loadData() {
+                this.users = JSON.parse(localStorage.getItem('dailyMate_users')) || [];
+                this.todos = JSON.parse(localStorage.getItem('dailyMate_todos')) || [];
+                this.bills = JSON.parse(localStorage.getItem('dailyMate_bills')) || [];
+                this.currentUser = JSON.parse(localStorage.getItem('dailyMate_currentUser'));
+            }
+
+            saveData() {
+                localStorage.setItem('dailyMate_users', JSON.stringify(this.users));
+                localStorage.setItem('dailyMate_todos', JSON.stringify(this.todos));
+                localStorage.setItem('dailyMate_bills', JSON.stringify(this.bills));
+                localStorage.setItem('dailyMate_currentUser', JSON.stringify(this.currentUser));
+            }
+
+            // 用户管理方法
+            registerUser(username, password, email = '') {
+                if (this.users.find(u => u.username === username)) {
+                    return { success: false, message: '用户名已存在' };
+                }
+                
+                const id = Date.now();
+                const newUser = new User(id, username, password, email);
+                this.users.push(newUser);
+                this.saveData();
+                return { success: true, user: newUser };
+            }
+
+            loginUser(username, password) {
+                const user = this.users.find(u => 
+                    u.username === username && u.password === password && u.isDelete === 0
+                );
+                
+                if (user) {
+                    this.currentUser = user;
+                    this.saveData();
+                    return { success: true, user };
+                }
+                return { success: false, message: '用户名或密码错误' };
+            }
+
+            logout() {
+                this.currentUser = null;
+                this.saveData();
+            }
+
+            // 待办事项管理方法
+            getTodos(userId) {
+                return this.todos.filter(t => t.userId === userId && t.isDelete === 0);
+            }
+
+            addTodo(todoData) {
+                const id = Date.now();
+                const [title, content, priority, status, startTime, endTime] = todoData;
+                const newTodo = new Todo(id, this.currentUser.id, title, content, priority, status, startTime || '', endTime || '');
+                this.todos.push(newTodo);
+                this.saveData();
+                return newTodo;
+            }
+
+            updateTodo(id, todoData) {
+                const index = this.todos.findIndex(t => t.id === id && t.userId === this.currentUser.id);
+                if (index !== -1) {
+                    const oldTodo = this.todos[index];
+                    
+                    // 更新数据
+                    const updatedTodo = { 
+                        ...oldTodo, 
+                        ...todoData, 
+                        updatedAt: new Date().toISOString() 
+                    };
+                    
+                    // 如果endTime被更新，重新提取date字段
+                    if (todoData.endTime !== undefined) {
+                        const tempTodo = new Todo(
+                            oldTodo.id, 
+                            oldTodo.userId, 
+                            todoData.title || oldTodo.title,
+                            todoData.content || oldTodo.content,
+                            todoData.priority !== undefined ? todoData.priority : oldTodo.priority,
+                            todoData.status !== undefined ? todoData.status : oldTodo.status,
+                            todoData.startTime !== undefined ? todoData.startTime : oldTodo.startTime,
+                            todoData.endTime,
+                            todoData.finishTime !== undefined ? todoData.finishTime : oldTodo.finishTime
+                        );
+                        updatedTodo.date = tempTodo.date;
+                    }
+                    
+                    // 如果状态从未完成变为已完成，设置完成时间
+                    if (oldTodo.status === 0 && todoData.status === 1 && !todoData.finishTime) {
+                        updatedTodo.finishTime = new Date().toISOString();
+                    }
+                    
+                    // 如果从已完成变为未完成，清除完成时间
+                    if (oldTodo.status === 1 && todoData.status === 0) {
+                        updatedTodo.finishTime = '';
+                    }
+                    
+                    this.todos[index] = updatedTodo;
+                    this.saveData();
+                    return updatedTodo;
+                }
+                return null;
+            }
+
+            deleteTodo(id) {
+                const index = this.todos.findIndex(t => t.id === id && t.userId === this.currentUser.id);
+                if (index !== -1) {
+                    this.todos[index].isDelete = 1;
+                    this.saveData();
+                    return true;
+                }
+                return false;
+            }
+
+            // 将datetime-local输入值转换为ISO字符串
+            convertToISOString(dateTimeString) {
+                if (!dateTimeString) return '';
+                return new Date(dateTimeString).toISOString();
+            }
+
+            // 将ISO字符串转换为datetime-local格式
+            convertFromISOString(isoString) {
+                if (!isoString) return '';
+                const date = new Date(isoString);
+                if (isNaN(date.getTime())) return '';
+                
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+
+            // 账单管理方法
+            getBills(userId) {
+                return this.bills.filter(b => b.userId === userId && b.isDelete === 0);
+            }
+
+            addBill(billData) {
+                const id = Date.now();
+                const newBill = new Bill(id, this.currentUser.id, ...billData);
+                this.bills.push(newBill);
+                this.saveData();
+                return newBill;
+            }
+
+            updateBill(id, billData) {
+                const index = this.bills.findIndex(b => b.id === id && b.userId === this.currentUser.id);
+                if (index !== -1) {
+                    const updatedBill = { ...this.bills[index], ...billData, updatedAt: new Date().toISOString() };
+                    this.bills[index] = updatedBill;
+                    this.saveData();
+                    return updatedBill;
+                }
+                return null;
+            }
+
+            deleteBill(id) {
+                const index = this.bills.findIndex(b => b.id === id && b.userId === this.currentUser.id);
+                if (index !== -1) {
+                    this.bills[index].isDelete = 1;
+                    this.saveData();
+                    return true;
+                }
+                return false;
+            }
+
+            // 统计数据方法
+            getTodoStats(userId) {
+                const todos = this.getTodos(userId);
+                const today = new Date().toISOString().split('T')[0];
+                const currentMonth = new Date().toISOString().substring(0, 7);
+                
+                const allStats = {
+                    total: todos.length,
+                    done: todos.filter(t => t.status === 1).length,
+                    undone: todos.filter(t => t.status === 0).length
+                };
+                
+                const monthStats = {
+                    total: todos.filter(t => t.date && t.date.startsWith(currentMonth)).length,
+                    done: todos.filter(t => t.date && t.date.startsWith(currentMonth) && t.status === 1).length,
+                    undone: todos.filter(t => t.date && t.date.startsWith(currentMonth) && t.status === 0).length
+                };
+                
+                const todayStats = {
+                    total: todos.filter(t => t.date === today).length,
+                    done: todos.filter(t => t.date === today && t.status === 1).length,
+                    undone: todos.filter(t => t.date === today && t.status === 0).length
+                };
+                
+                return { allStats, monthStats, todayStats };
+            }
+
+            getBillStats(userId) {
+                const bills = this.getBills(userId);
+                const today = new Date().toISOString().split('T')[0];
+                const currentMonth = new Date().toISOString().substring(0, 7);
+                
+                const allIncome = bills.filter(b => b.type === 1).reduce((sum, b) => sum + b.amount, 0);
+                const allExpense = bills.filter(b => b.type === 2).reduce((sum, b) => sum + b.amount, 0);
+                
+                const monthIncome = bills
+                    .filter(b => b.type === 1 && b.date && b.date.startsWith(currentMonth))
+                    .reduce((sum, b) => sum + b.amount, 0);
+                const monthExpense = bills
+                    .filter(b => b.type === 2 && b.date && b.date.startsWith(currentMonth))
+                    .reduce((sum, b) => sum + b.amount, 0);
+                
+                const todayIncome = bills
+                    .filter(b => b.type === 1 && b.date === today)
+                    .reduce((sum, b) => sum + b.amount, 0);
+                const todayExpense = bills
+                    .filter(b => b.type === 2 && b.date === today)
+                    .reduce((sum, b) => sum + b.amount, 0);
+                
+                return {
+                    all: { income: allIncome, expense: allExpense },
+                    month: { income: monthIncome, expense: monthExpense },
+                    today: { income: todayIncome, expense: todayExpense }
+                };
+            }
+
+            // 获取日历事件
+            getCalendarEvents(userId, year, month) {
+                const todos = this.getTodos(userId);
+                const bills = this.getBills(userId);
+                const events = {};
+                
+                // 筛选指定月份的待办事项
+                const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
+                const monthTodos = todos.filter(t => t.date && t.date.startsWith(monthStr));
+                
+                // 按日期分组待办事项
+                monthTodos.forEach(todo => {
+                    const day = parseInt(todo.date.split('-')[2]);
+                    if (!events[day]) events[day] = [];
+                    events[day].push({
+                        type: 'todo',
+                        title: todo.title,
+                        status: todo.status
+                    });
+                });
+                
+                // 筛选指定月份的账单
+                const monthBills = bills.filter(b => b.date && b.date.startsWith(monthStr));
+                
+                // 按日期分组账单
+                monthBills.forEach(bill => {
+                    const day = parseInt(bill.date.split('-')[2]);
+                    if (!events[day]) events[day] = [];
+                    events[day].push({
+                        type: 'bill',
+                        amount: bill.amount,
+                        category: bill.category
+                    });
+                });
+                
+                return events;
+            }
+        }
+
+        // 应用主控制器
+        class DailyMateApp {
+            constructor() {
+                this.dataManager = new DataManager();
+                this.currentDate = new Date();
+                this.selectedDate = this.currentDate.getDate();
+                this.currentMenu = 'todo';
+                
+                this.init();
+            }
+
+            init() {
+                this.cacheElements();
+                this.bindEvents();
+                this.checkAuth();
+                this.initCalendar();
+                this.setTodayDate();
+            }
+
+            cacheElements() {
+                // 页面元素
+                this.loginCheckPage = document.getElementById('loginCheckPage');
+                this.appPage = document.getElementById('appPage');
+                this.goToLoginBtn = document.getElementById('goToLoginBtn');
+                
+                // 主应用页面元素
+                this.usernameDisplay = document.getElementById('usernameDisplay');
+                this.userAvatar = document.getElementById('userAvatar');
+                this.logoutBtn = document.getElementById('logoutBtn');
+                
+                // 日历元素
+                this.calendarMonthEl = document.getElementById('calendarMonth');
+                this.calendarGridEl = document.getElementById('calendarGrid');
+                this.prevMonthBtn = document.getElementById('prevMonthBtn');
+                this.nextMonthBtn = document.getElementById('nextMonthBtn');
+                
+                // 统计卡片元素
+                this.todoDoneEl = document.getElementById('todoDone');
+                this.todoUndoneEl = document.getElementById('todoUndone');
+                this.expenseAmountEl = document.getElementById('expenseAmount');
+                this.incomeAmountEl = document.getElementById('incomeAmount');
+                this.todayDoneEl = document.getElementById('todayDone');
+                this.todayIncomeEl = document.getElementById('todayIncome');
+                this.todayExpenseEl = document.getElementById('todayExpense');
+                
+                // 菜单元素
+                this.menuItems = document.querySelectorAll('.menu-item');
+                
+                // 内容区域元素
+                this.todoContent = document.getElementById('todoContent');
+                this.billContent = document.getElementById('billContent');
+                
+                // 待办事项表格元素
+                this.todoTableBody = document.getElementById('todoTableBody');
+                this.todoEmptyState = document.getElementById('todoEmptyState');
+                this.addTodoBtn = document.getElementById('addTodoBtn');
+                
+                // 账单表格元素
+                this.billTableBody = document.getElementById('billTableBody');
+                this.billEmptyState = document.getElementById('billEmptyState');
+                this.addBillBtn = document.getElementById('addBillBtn');
+                
+                // 模态框元素
+                this.todoModal = document.getElementById('todoModal');
+                this.billModal = document.getElementById('billModal');
+            }
+
+            bindEvents() {
+                // 退出登录按钮
+                this.logoutBtn.addEventListener('click', () => this.handleLogout());
+                
+                // 日历导航按钮
+                this.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
+                this.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
+                this.calendarMonthEl.addEventListener('click', () => this.showMonthPicker());
+                
+                // 菜单切换事件
+                this.menuItems.forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const menuId = item.getAttribute('data-menu');
+                        this.switchMenu(menuId);
+                    });
+                });
+                
+                // 待办事项事件
+                this.addTodoBtn.addEventListener('click', () => this.showTodoModal());
+                
+                // 账单事件
+                this.addBillBtn.addEventListener('click', () => this.showBillModal());
+                
+                // 模态框关闭事件
+                document.getElementById('closeTodoModal').addEventListener('click', () => this.hideTodoModal());
+                document.getElementById('cancelTodoBtn').addEventListener('click', () => this.hideTodoModal());
+                document.getElementById('closeBillModal').addEventListener('click', () => this.hideBillModal());
+                document.getElementById('cancelBillBtn').addEventListener('click', () => this.hideBillModal());
+                
+                // 模态框表单提交事件
+                document.getElementById('todoForm').addEventListener('submit', (e) => this.handleTodoSubmit(e));
+                document.getElementById('billForm').addEventListener('submit', (e) => this.handleBillSubmit(e));
+                
+                // 点击模态框背景关闭
+                this.todoModal.addEventListener('click', (e) => {
+                    if (e.target === this.todoModal) this.hideTodoModal();
+                });
+                
+                this.billModal.addEventListener('click', (e) => {
+                    if (e.target === this.billModal) this.hideBillModal();
+                });
+            }
+
+            // 认证相关方法
+            checkAuth() {
+                if (this.dataManager.currentUser) {
+                    this.showApp();
+                } else {
+                    this.showLoginCheck();
+                }
+            }
+
+            showLoginCheck() {
+                this.loginCheckPage.classList.remove('hidden');
+                this.appPage.classList.add('hidden');
+                
+                // 添加跳转到登录页的事件监听
+                this.goToLoginBtn.addEventListener('click', () => {
+                    window.location.href = 'login.html';
+                });
+            }
+
+            showApp() {
+                this.loginCheckPage.classList.add('hidden');
+                this.appPage.classList.remove('hidden');
+                this.updateUserInfo();
+                this.loadData();
+                this.updateStats();
+                this.renderTodoTable();
+                this.renderBillTable();
+            }
+
+            handleLogout() {
+                if (confirm('确定要退出登录吗？')) {
+                    this.dataManager.logout();
+                    this.showNotification('已退出登录');
+                    // 重新检查认证状态，将显示登录检查页面
+                    this.checkAuth();
+                }
+            }
+
+            updateUserInfo() {
+                const user = this.dataManager.currentUser;
+                if (user) {
+                    this.usernameDisplay.textContent = user.username;
+                    this.userAvatar.src = user.avatar;
+                }
+            }
+
+            // 日历相关方法
+            initCalendar() {
+                this.renderCalendar();
+            }
+
+            setTodayDate() {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = today.getMonth() + 1;
+                const day = today.getDate();
+                
+                // 设置账单默认日期为今天
+                document.getElementById('billDate').value = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                // 设置待办事项时间默认值（今天下午2点到4点）
+                const now = new Date();
+                const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0);
+                const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 16, 0);
+                
+                document.getElementById('todoStartTime').value = this.dataManager.convertFromISOString(startTime.toISOString());
+                document.getElementById('todoEndTime').value = this.dataManager.convertFromISOString(endTime.toISOString());
+            }
+
+            renderCalendar() {
+                const year = this.currentDate.getFullYear();
+                const month = this.currentDate.getMonth();
+                
+                // 更新月份显示
+                this.calendarMonthEl.textContent = `${year}年${month + 1}月`;
+                
+                // 获取当前月的第一天
+                const firstDay = new Date(year, month, 1);
+                // 获取当前月的最后一天
+                const lastDay = new Date(year, month + 1, 0);
+                // 获取第一天是星期几 (0-6, 0是周日)
+                const firstDayOfWeek = firstDay.getDay();
+                // 获取上个月最后一天
+                const prevMonthLastDay = new Date(year, month, 0).getDate();
+                
+                // 计算需要显示的日期
+                const daysInMonth = lastDay.getDate();
+                
+                // 调整星期一为一周的开始 (如果firstDayOfWeek为0（周日），则变为6)
+                const startDay = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+                
+                // 清空日历网格
+                this.calendarGridEl.innerHTML = '';
+                
+                // 添加上个月需要显示的天数
+                for (let i = startDay - 1; i >= 0; i--) {
+                    const day = prevMonthLastDay - i;
+                    const cell = this.createCalendarCell(day, 'other-month');
+                    this.calendarGridEl.appendChild(cell);
+                }
+                
+                // 添加当前月需要显示的天数
+                const today = new Date();
+                const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
+                
+                // 获取当前用户的日历事件
+                const events = {};
+                if (this.dataManager.currentUser) {
+                    Object.assign(events, this.dataManager.getCalendarEvents(
+                        this.dataManager.currentUser.id, 
+                        year, 
+                        month
+                    ));
+                }
+                
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const cell = this.createCalendarCell(i, 'current-month');
+                    
+                    // 检查是否是今天
+                    if (isCurrentMonth && i === today.getDate()) {
+                        cell.classList.add('today');
+                    }
+                    
+                    // 检查是否被选中
+                    if (this.selectedDate === i) {
+                        cell.classList.add('selected');
+                    }
+                    
+                    // 检查是否有事件
+                    if (events[i] && events[i].length > 0) {
+                        const dotContainer = document.createElement('div');
+                        dotContainer.className = 'mini-dot-container';
+                        
+                        // 最多显示3个点
+                        const maxDots = Math.min(events[i].length, 3);
+                        for (let j = 0; j < maxDots; j++) {
+                            const dot = document.createElement('span');
+                            dot.className = 'mini-dot';
+                            
+                            // 根据事件类型设置颜色
+                            if (events[i][j].type === 'todo') {
+                                dot.style.backgroundColor = events[i][j].status === 1 ? '#48bb78' : '#4299e1';
+                            } else {
+                                dot.style.backgroundColor = events[i][j].type === 1 ? '#e53e3e' : '#38b2ac';
+                            }
+                            
+                            dotContainer.appendChild(dot);
+                        }
+                        
+                        cell.appendChild(dotContainer);
+                    }
+                    
+                    this.calendarGridEl.appendChild(cell);
+                }
+                
+                // 计算下个月需要显示的天数
+                const totalCells = 42;
+                const totalDays = startDay + daysInMonth;
+                const nextMonthDays = totalCells - totalDays;
+                
+                // 添加下个月需要显示的天数
+                for (let i = 1; i <= nextMonthDays; i++) {
+                    const cell = this.createCalendarCell(i, 'other-month');
+                    this.calendarGridEl.appendChild(cell);
+                }
+            }
+
+            createCalendarCell(day, type) {
+                const cell = document.createElement('div');
+                cell.className = 'mini-calendar-cell';
+                if (type === 'other-month') {
+                    cell.classList.add('other-month');
+                }
+                cell.textContent = day;
+                
+                // 只有当前月的日期可以点击
+                if (type === 'current-month') {
+                    cell.addEventListener('click', () => this.selectDate(day));
+                }
+                
+                return cell;
+            }
+
+            selectDate(day) {
+                this.selectedDate = day;
+                this.renderCalendar();
+                
+                // 在实际应用中，这里可以加载选中日期的数据
+                const selectedDate = new Date(
+                    this.currentDate.getFullYear(), 
+                    this.currentDate.getMonth(), 
+                    day
+                );
+                
+                // 更新账单表单日期
+                const year = selectedDate.getFullYear();
+                const month = selectedDate.getMonth() + 1;
+                const dayStr = selectedDate.getDate();
+                
+                document.getElementById('billDate').value = `${year}-${String(month).padStart(2, '0')}-${String(dayStr).padStart(2, '0')}`;
+                
+                // 更新待办事项的截止时间（设置为选中日期的下午2-4点）
+                const startTime = new Date(year, month - 1, dayStr, 14, 0);
+                const endTime = new Date(year, month - 1, dayStr, 16, 0);
+                
+                document.getElementById('todoStartTime').value = this.dataManager.convertFromISOString(startTime.toISOString());
+                document.getElementById('todoEndTime').value = this.dataManager.convertFromISOString(endTime.toISOString());
+                
+                this.showNotification(`已选择 ${year}年${month}月${dayStr}日`, 'info');
+            }
+
+            changeMonth(offset) {
+                const d = new Date(this.currentDate);
+                d.setMonth(d.getMonth() + offset);
+                this.currentDate = d;
+                this.selectedDate = null;
+                this.renderCalendar();
+            }
+
+            showMonthPicker() {
+                // 在实际应用中，这里可以显示月份选择器
+                const currentYear = this.currentDate.getFullYear();
+                const currentMonth = this.currentDate.getMonth() + 1;
+                
+                const input = prompt('请输入月份 (YYYY-MM格式，如2023-10):', `${currentYear}-${String(currentMonth).padStart(2, '0')}`);
+                if (input) {
+                    const [year, month] = input.split('-');
+                    if (year && month) {
+                        const d = new Date(this.currentDate);
+                        d.setFullYear(Number(year));
+                        d.setMonth(Number(month) - 1);
+                        this.currentDate = d;
+                        this.selectedDate = null;
+                        this.renderCalendar();
+                        this.showNotification(`已切换到${year}年${month}月`, 'info');
+                    }
+                }
+            }
+
+            // 菜单切换方法
+            switchMenu(menuId) {
+                // 移除所有菜单项的active类
+                this.menuItems.forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // 为当前菜单项添加active类
+                document.querySelector(`.menu-item[data-menu="${menuId}"]`).classList.add('active');
+                
+                // 显示对应的内容区域
+                if (menuId === 'todo') {
+                    this.todoContent.classList.remove('hidden');
+                    this.billContent.classList.add('hidden');
+                    this.currentMenu = 'todo';
+                } else if (menuId === 'bill') {
+                    this.todoContent.classList.add('hidden');
+                    this.billContent.classList.remove('hidden');
+                    this.currentMenu = 'bill';
+                }
+            }
+
+            // 数据加载方法
+            loadData() {
+                this.updateStats();
+                this.renderCalendar();
+            }
+
+            updateStats() {
+                if (!this.dataManager.currentUser) return;
+                
+                const userId = this.dataManager.currentUser.id;
+                
+                // 获取待办事项统计
+                const todoStats = this.dataManager.getTodoStats(userId);
+                this.todoDoneEl.textContent = todoStats.monthStats.done;
+                this.todoUndoneEl.textContent = todoStats.monthStats.undone;
+                this.todayDoneEl.textContent = todoStats.todayStats.done;
+                
+                // 获取账单统计
+                const billStats = this.dataManager.getBillStats(userId);
+                this.expenseAmountEl.textContent = billStats.month.expense.toFixed(2);
+                this.incomeAmountEl.textContent = billStats.month.income.toFixed(2);
+                this.todayIncomeEl.textContent = billStats.today.income.toFixed(2);
+                this.todayExpenseEl.textContent = billStats.today.expense.toFixed(2);
+            }
+
+            // 待办事项表格渲染
+            renderTodoTable() {
+                if (!this.dataManager.currentUser) return;
+                
+                const todos = this.dataManager.getTodos(this.dataManager.currentUser.id);
+                this.todoTableBody.innerHTML = '';
+                
+                if (todos.length === 0) {
+                    this.todoEmptyState.classList.remove('hidden');
+                    return;
+                }
+                
+                this.todoEmptyState.classList.add('hidden');
+                
+                // 按归属日期排序，最新的在前面
+                const sortedTodos = [...todos].sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                sortedTodos.forEach(todo => {
+                    const row = document.createElement('tr');
+                    
+                    // 优先级文本
+                    const priorityText = {
+                        1: '高',
+                        2: '中',
+                        3: '低'
+                    }[todo.priority] || '中';
+                    
+                    // 状态文本
+                    const statusText = todo.status === 1 ? '已完成' : '未完成';
+                    
+                    // 归属日期格式化
+                    const date = todo.date ? new Date(todo.date).toLocaleDateString('zh-CN') : '';
+                    
+                    // 开始时间格式化（如果有）
+                    let startTime = '-';
+                    if (todo.startTime) {
+                        const startDate = new Date(todo.startTime);
+                        startTime = startDate.toLocaleString('zh-CN', {
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    }
+                    
+                    // 截止时间格式化（如果有）
+                    let endTime = '-';
+                    if (todo.endTime) {
+                        const endDate = new Date(todo.endTime);
+                        endTime = endDate.toLocaleString('zh-CN', {
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    }
+                    
+                    row.innerHTML = `
+                        <td>${todo.title}</td>
+                        <td>${todo.content || '-'}</td>
+                        <td><span class="priority-badge priority-${todo.priority}">${priorityText}</span></td>
+                        <td><span class="status-badge status-${todo.status}">${statusText}</span></td>
+                        <td>${date}</td>
+                        <td>${startTime}</td>
+                        <td>${endTime}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="app.editTodo(${todo.id})">编辑</button>
+                            <button class="action-btn delete-btn" onclick="app.deleteTodo(${todo.id})">删除</button>
+                        </td>
+                    `;
+                    
+                    this.todoTableBody.appendChild(row);
+                });
+            }
+
+            // 账单表格渲染
+            renderBillTable() {
+                if (!this.dataManager.currentUser) return;
+                
+                const bills = this.dataManager.getBills(this.dataManager.currentUser.id);
+                this.billTableBody.innerHTML = '';
+                
+                if (bills.length === 0) {
+                    this.billEmptyState.classList.remove('hidden');
+                    return;
+                }
+                
+                this.billEmptyState.classList.add('hidden');
+                
+                // 按日期排序，最新的在前面
+                const sortedBills = [...bills].sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                sortedBills.forEach(bill => {
+                    const row = document.createElement('tr');
+                    
+                    // 类型文本
+                    const typeText = bill.type === 1 ? '收入' : '支出';
+                    
+                    // 日期格式化
+                    const date = bill.date ? new Date(bill.date).toLocaleDateString('zh-CN') : '';
+                    const createdAt = bill.createdAt ? new Date(bill.createdAt).toLocaleString('zh-CN', {
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : '';
+                    
+                    row.innerHTML = `
+                        <td><span class="type-badge type-${bill.type}">${typeText}</span></td>
+                        <td>${bill.category}</td>
+                        <td>${bill.amount.toFixed(2)}</td>
+                        <td>${bill.remark || '-'}</td>
+                        <td>${date}</td>
+                        <td>${createdAt}</td>
+                        <td>
+                            <button class="action-btn edit-btn" onclick="app.editBill(${bill.id})">编辑</button>
+                            <button class="action-btn delete-btn" onclick="app.deleteBill(${bill.id})">删除</button>
+                        </td>
+                    `;
+                    
+                    this.billTableBody.appendChild(row);
+                });
+            }
+
+            // 待办事项模态框方法
+            showTodoModal(todoId = null) {
+                const modal = document.getElementById('todoModal');
+                const title = document.getElementById('todoModalTitle');
+                
+                if (todoId) {
+                    // 编辑模式
+                    title.textContent = '编辑待办事项';
+                    this.fillTodoForm(todoId);
+                } else {
+                    // 添加模式
+                    title.textContent = '添加待办事项';
+                    this.resetTodoForm();
+                }
+                
+                // 先移除hidden类，然后添加show类触发动画
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.add('show');
+                }, 10);
+                
+                // 阻止背景滚动
+                document.body.style.overflow = 'hidden';
+            }
+
+            hideTodoModal() {
+                const modal = document.getElementById('todoModal');
+                
+                // 先移除show类触发消失动画
+                modal.classList.remove('show');
+                
+                // 动画结束后添加hidden类
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+                
+                // 恢复背景滚动
+                document.body.style.overflow = '';
+            }
+
+            resetTodoForm() {
+                document.getElementById('todoId').value = '';
+                document.getElementById('todoTitle').value = '';
+                document.getElementById('todoContentInput').value = '';
+                document.getElementById('todoPriority').value = '2';
+                document.getElementById('todoStatus').value = '0';
+                
+                // 设置默认时间（今天下午2点到4点）
+                const now = new Date();
+                const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0);
+                const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 16, 0);
+                
+                document.getElementById('todoStartTime').value = this.dataManager.convertFromISOString(startTime.toISOString());
+                document.getElementById('todoEndTime').value = this.dataManager.convertFromISOString(endTime.toISOString());
+            }
+
+            fillTodoForm(todoId) {
+                const todo = this.dataManager.todos.find(t => t.id === todoId && t.userId === this.dataManager.currentUser.id);
+                if (!todo) return;
+                
+                document.getElementById('todoId').value = todo.id;
+                document.getElementById('todoTitle').value = todo.title;
+                document.getElementById('todoContentInput').value = todo.content || '';
+                document.getElementById('todoPriority').value = todo.priority;
+                document.getElementById('todoStatus').value = todo.status;
+                
+                // 转换时间格式以便在datetime-local输入框中显示
+                if (todo.startTime) {
+                    document.getElementById('todoStartTime').value = this.dataManager.convertFromISOString(todo.startTime);
+                } else {
+                    document.getElementById('todoStartTime').value = '';
+                }
+                
+                if (todo.endTime) {
+                    document.getElementById('todoEndTime').value = this.dataManager.convertFromISOString(todo.endTime);
+                } else {
+                    document.getElementById('todoEndTime').value = '';
+                }
+            }
+
+            async handleTodoSubmit(e) {
+                e.preventDefault();
+                
+                const id = document.getElementById('todoId').value;
+                const title = document.getElementById('todoTitle').value.trim();
+                const content = document.getElementById('todoContentInput').value.trim();
+                const priority = parseInt(document.getElementById('todoPriority').value);
+                const status = parseInt(document.getElementById('todoStatus').value);
+                const startTime = document.getElementById('todoStartTime').value;
+                const endTime = document.getElementById('todoEndTime').value;
+                
+                if (!title) {
+                    this.showNotification('请填写标题', 'error');
+                    return;
+                }
+                
+                if (!endTime) {
+                    this.showNotification('请选择计划截止时间', 'error');
+                    return;
+                }
+                
+                // 转换时间格式
+                const startTimeISO = startTime ? this.dataManager.convertToISOString(startTime) : '';
+                const endTimeISO = this.dataManager.convertToISOString(endTime);
+                
+                if (id) {
+                    // 更新待办事项
+                    const success = this.dataManager.updateTodo(parseInt(id), {
+                        title,
+                        content,
+                        priority,
+                        status,
+                        startTime: startTimeISO,
+                        endTime: endTimeISO
+                    });
+                    
+                    if (success) {
+                        this.showNotification('待办事项已更新');
+                        this.hideTodoModal();
+                        this.renderTodoTable();
+                        this.updateStats();
+                        this.renderCalendar();
+                    }
+                } else {
+                    // 添加新待办事项
+                    const todoData = [title, content, priority, status, startTimeISO, endTimeISO];
+                    this.dataManager.addTodo(todoData);
+                    this.showNotification('待办事项已添加');
+                    this.hideTodoModal();
+                    this.renderTodoTable();
+                    this.updateStats();
+                    this.renderCalendar();
+                }
+            }
+
+            editTodo(todoId) {
+                this.showTodoModal(todoId);
+            }
+
+            async deleteTodo(todoId) {
+                if (confirm('确定要删除这个待办事项吗？')) {
+                    const success = this.dataManager.deleteTodo(todoId);
+                    if (success) {
+                        this.showNotification('待办事项已删除');
+                        this.renderTodoTable();
+                        this.updateStats();
+                        this.renderCalendar();
+                    }
+                }
+            }
+
+            // 账单模态框方法
+            showBillModal(billId = null) {
+                const modal = document.getElementById('billModal');
+                const title = document.getElementById('billModalTitle');
+                
+                if (billId) {
+                    // 编辑模式
+                    title.textContent = '编辑账单';
+                    this.fillBillForm(billId);
+                } else {
+                    // 添加模式
+                    title.textContent = '添加账单';
+                    this.resetBillForm();
+                }
+                
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.add('show');
+                }, 10);
+                
+                document.body.style.overflow = 'hidden';
+            }
+
+            hideBillModal() {
+                const modal = document.getElementById('billModal');
+                
+                modal.classList.remove('show');
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+                
+                document.body.style.overflow = '';
+            }
+
+            resetBillForm() {
+                document.getElementById('billId').value = '';
+                document.getElementById('billType').value = '2';
+                document.getElementById('billCategory').value = '其他支出';
+                document.getElementById('billAmount').value = '';
+                document.getElementById('billRemark').value = '';
+                
+                // 设置默认日期为今天
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = today.getMonth() + 1;
+                const day = today.getDate();
+                document.getElementById('billDate').value = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            }
+
+            fillBillForm(billId) {
+                const bill = this.dataManager.bills.find(b => b.id === billId && b.userId === this.dataManager.currentUser.id);
+                if (!bill) return;
+                
+                document.getElementById('billId').value = bill.id;
+                document.getElementById('billType').value = bill.type;
+                document.getElementById('billCategory').value = bill.category;
+                document.getElementById('billAmount').value = bill.amount;
+                document.getElementById('billRemark').value = bill.remark || '';
+                document.getElementById('billDate').value = bill.date || '';
+            }
+
+            async handleBillSubmit(e) {
+                e.preventDefault();
+                
+                const id = document.getElementById('billId').value;
+                const type = parseInt(document.getElementById('billType').value);
+                const category = document.getElementById('billCategory').value;
+                const amount = parseFloat(document.getElementById('billAmount').value);
+                const remark = document.getElementById('billRemark').value.trim();
+                const date = document.getElementById('billDate').value;
+                
+                if (!category) {
+                    this.showNotification('请选择分类', 'error');
+                    return;
+                }
+                
+                if (!amount || amount <= 0) {
+                    this.showNotification('请输入有效的金额', 'error');
+                    return;
+                }
+                
+                if (!date) {
+                    this.showNotification('请选择日期', 'error');
+                    return;
+                }
+                
+                const billData = [type, category, amount, remark, date];
+                
+                if (id) {
+                    // 更新账单
+                    const success = this.dataManager.updateBill(parseInt(id), {
+                        type,
+                        category,
+                        amount,
+                        remark,
+                        date
+                    });
+                    
+                    if (success) {
+                        this.showNotification('账单已更新');
+                        this.hideBillModal();
+                        this.renderBillTable();
+                        this.updateStats();
+                        this.renderCalendar();
+                    }
+                } else {
+                    // 添加新账单
+                    this.dataManager.addBill(billData);
+                    this.showNotification('账单已添加');
+                    this.hideBillModal();
+                    this.renderBillTable();
+                    this.updateStats();
+                    this.renderCalendar();
+                }
+            }
+
+            editBill(billId) {
+                this.showBillModal(billId);
+            }
+
+            async deleteBill(billId) {
+                if (confirm('确定要删除这个账单吗？')) {
+                    const success = this.dataManager.deleteBill(billId);
+                    if (success) {
+                        this.showNotification('账单已删除');
+                        this.renderBillTable();
+                        this.updateStats();
+                        this.renderCalendar();
+                    }
+                }
+            }
+
+            // 工具方法
+            showNotification(message, type = 'success') {
+                // 移除已有的通知
+                const existingNotifications = document.querySelectorAll('.notification');
+                existingNotifications.forEach(n => {
+                    n.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => {
+                        if (n.parentNode) {
+                            document.body.removeChild(n);
+                        }
+                    }, 300);
+                });
+                
+                // 创建一个新的通知元素
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                // 3秒后移除通知
+                setTimeout(() => {
+                    notification.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            document.body.removeChild(notification);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+        }
+
+        // 初始化应用
+        let app;
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new DailyMateApp();
+            
+            // 将app暴露到全局，方便从HTML调用
+            window.app = app;
+        });
+    </script>
+</body>
+</html>
