@@ -1616,6 +1616,13 @@
     </div>
 
     <script>
+        // API配置
+        const API_CONFIG = {
+            BASE_URL: 'http://localhost:8080',
+            TOKEN_KEY: 'dailyMate_token',
+            USER_KEY: 'dailyMate_user'
+        };
+
         // 数据模型类定义
         class User {
             constructor(id, username, password, email = '', avatar = '', isDelete = 0) {
@@ -1630,7 +1637,6 @@
             }
         }
 
-        // 更新Todo类
         class Todo {
             constructor(id, userId, title, content = '', priority = 2, status = 0, startTime = '', endTime = '', finishTime = '') {
                 this.id = id;
@@ -1682,213 +1688,183 @@
             }
         }
 
-        // 数据存储管理器
-        class DataManager {
+        // API请求管理器
+        class APIManager {
             constructor() {
-                this.initStorage();
-                this.loadData();
-            }
-
-            initStorage() {
-                if (!localStorage.getItem('dailyMate_currentUser')) {
-                    localStorage.setItem('dailyMate_currentUser', JSON.stringify(null));
-                }
-                if (!localStorage.getItem('dailyMate_todos')) {
-                    localStorage.setItem('dailyMate_todos', JSON.stringify([]));
-                }
-                if (!localStorage.getItem('dailyMate_bills')) {
-                    localStorage.setItem('dailyMate_bills', JSON.stringify([]));
-                }
-            }
-
-            loadData() {
-                this.todos = JSON.parse(localStorage.getItem('dailyMate_todos')) || [];
-                this.bills = JSON.parse(localStorage.getItem('dailyMate_bills')) || [];
-                this.currentUser = JSON.parse(localStorage.getItem('dailyMate_currentUser'));
-            }
-
-            saveData() {
-                localStorage.setItem('dailyMate_todos', JSON.stringify(this.todos));
-                localStorage.setItem('dailyMate_bills', JSON.stringify(this.bills));
-                localStorage.setItem('dailyMate_currentUser', JSON.stringify(this.currentUser));
-            }
-
-            // 设置当前用户（从后端用户信息转换）
-            setCurrentUserFromBackend(backendUser) {
-                const frontendUser = new User(
-                    backendUser.id,
-                    backendUser.username,
-                    '', // 密码留空，因为使用token认证
-                    backendUser.email || '',
-                    backendUser.avatar || 'https://img.icons8.com/color/48/000000/user-male-circle--v2.png'
-                );
-                
-                // 保留后端的时间戳
-                if (backendUser.createdAt) {
-                    frontendUser.createdAt = backendUser.createdAt;
-                }
-                if (backendUser.updatedAt) {
-                    frontendUser.updatedAt = backendUser.updatedAt;
-                }
-                
-                this.currentUser = frontendUser;
-                this.saveData();
-                return frontendUser;
-            }
-
-            logout() {
+                this.token = localStorage.getItem(API_CONFIG.TOKEN_KEY);
+                this.baseURL = API_CONFIG.BASE_URL;
                 this.currentUser = null;
-                this.saveData();
             }
 
-            // 待办事项管理方法
-            getTodos(userId) {
-                return this.todos.filter(t => t.userId === userId && t.isDelete === 0);
-            }
-
-            addTodo(todoData) {
-                const id = Date.now();
-                const [title, content, priority, status, startTime, endTime] = todoData;
-                const newTodo = new Todo(id, this.currentUser.id, title, content, priority, status, startTime || '', endTime || '');
-                this.todos.push(newTodo);
-                this.saveData();
-                return newTodo;
-            }
-
-            updateTodo(id, todoData) {
-                const index = this.todos.findIndex(t => t.id === id && t.userId === this.currentUser.id);
-                if (index !== -1) {
-                    const oldTodo = this.todos[index];
-                    
-                    // 更新数据
-                    const updatedTodo = { 
-                        ...oldTodo, 
-                        ...todoData, 
-                        updatedAt: new Date().toISOString() 
-                    };
-                    
-                    // 如果endTime被更新，重新提取date字段
-                    if (todoData.endTime !== undefined) {
-                        const tempTodo = new Todo(
-                            oldTodo.id, 
-                            oldTodo.userId, 
-                            todoData.title || oldTodo.title,
-                            todoData.content || oldTodo.content,
-                            todoData.priority !== undefined ? todoData.priority : oldTodo.priority,
-                            todoData.status !== undefined ? todoData.status : oldTodo.status,
-                            todoData.startTime !== undefined ? todoData.startTime : oldTodo.startTime,
-                            todoData.endTime,
-                            todoData.finishTime !== undefined ? todoData.finishTime : oldTodo.finishTime
-                        );
-                        updatedTodo.date = tempTodo.date;
-                    }
-                    
-                    // 如果状态从未完成变为已完成，设置完成时间
-                    if (oldTodo.status === 0 && todoData.status === 1 && !todoData.finishTime) {
-                        updatedTodo.finishTime = new Date().toISOString();
-                    }
-                    
-                    // 如果从已完成变为未完成，清除完成时间
-                    if (oldTodo.status === 1 && todoData.status === 0) {
-                        updatedTodo.finishTime = '';
-                    }
-                    
-                    this.todos[index] = updatedTodo;
-                    this.saveData();
-                    return updatedTodo;
-                }
-                return null;
-            }
-
-            deleteTodo(id) {
-                const index = this.todos.findIndex(t => t.id === id && t.userId === this.currentUser.id);
-                if (index !== -1) {
-                    this.todos[index].isDelete = 1;
-                    this.saveData();
-                    return true;
-                }
-                return false;
-            }
-
-            // 将datetime-local输入值转换为ISO字符串
-            convertToISOString(dateTimeString) {
-                if (!dateTimeString) return '';
-                return new Date(dateTimeString).toISOString();
-            }
-
-            // 将ISO字符串转换为datetime-local格式
-            convertFromISOString(isoString) {
-                if (!isoString) return '';
-                const date = new Date(isoString);
-                if (isNaN(date.getTime())) return '';
+            // 统一API请求方法
+            async request(endpoint, options = {}) {
+                const url = `${this.baseURL}${endpoint}`;
                 
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                const hours = String(date.getHours()).padStart(2, '0');
-                const minutes = String(date.getMinutes()).padStart(2, '0');
-                return `${year}-${month}-${day}T${hours}:${minutes}`;
-            }
-
-            // 账单管理方法
-            getBills(userId) {
-                return this.bills.filter(b => b.userId === userId && b.isDelete === 0);
-            }
-
-            addBill(billData) {
-                const id = Date.now();
-                const newBill = new Bill(id, this.currentUser.id, ...billData);
-                this.bills.push(newBill);
-                this.saveData();
-                return newBill;
-            }
-
-            updateBill(id, billData) {
-                const index = this.bills.findIndex(b => b.id === id && b.userId === this.currentUser.id);
-                if (index !== -1) {
-                    const updatedBill = { ...this.bills[index], ...billData, updatedAt: new Date().toISOString() };
-                    this.bills[index] = updatedBill;
-                    this.saveData();
-                    return updatedBill;
+                const headers = {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                };
+                
+                if (this.token) {
+                    headers['Authorization'] = `Bearer ${this.token}`;
                 }
-                return null;
-            }
-
-            deleteBill(id) {
-                const index = this.bills.findIndex(b => b.id === id && b.userId === this.currentUser.id);
-                if (index !== -1) {
-                    this.bills[index].isDelete = 1;
-                    this.saveData();
-                    return true;
+                
+                const config = {
+                    ...options,
+                    headers
+                };
+                
+                try {
+                    const response = await fetch(url, config);
+                    
+                    // 处理401未授权
+                    if (response.status === 401) {
+                        this.handleUnauthorized();
+                        throw new Error('登录已过期，请重新登录');
+                    }
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.msg || errorData.message || `请求失败: ${response.status}`);
+                    }
+                    
+                    return await response.json();
+                } catch (error) {
+                    console.error('API请求失败:', error);
+                    throw error;
                 }
-                return false;
             }
 
-            // 统计数据方法
-            getTodoStats(userId) {
-                const todos = this.getTodos(userId);
+            handleUnauthorized() {
+                // 清除登录信息
+                localStorage.removeItem(API_CONFIG.TOKEN_KEY);
+                localStorage.removeItem(API_CONFIG.USER_KEY);
+                
+                // 显示错误提示
+                alert('登录已过期，请重新登录');
+                
+                // 跳转到登录页
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+            }
+
+            // 获取当前登录用户信息
+            async getCurrentUser() {
+                try {
+                    const user = await this.request('/api/user/me');
+                    this.currentUser = user;
+                    return user;
+                } catch (error) {
+                    console.error('获取用户信息失败:', error);
+                    return null;
+                }
+            }
+
+            // 待办事项相关API
+            async getTodos(userId) {
+                return await this.request(`/api/todo/list?userId=${userId}`);
+            }
+
+            async addTodo(todoData) {
+                const [title, content, priority, status, startTime, endTime] = todoData;
+                const todo = {
+                    userId: this.currentUser?.id,
+                    title,
+                    content,
+                    priority,
+                    status,
+                    date: this.extractDateFromEndTime(endTime),
+                    startTime: startTime ? new Date(startTime).toISOString() : null,
+                    endTime: endTime ? new Date(endTime).toISOString() : null
+                };
+                
+                return await this.request('/api/todo/add', {
+                    method: 'POST',
+                    body: JSON.stringify(todo)
+                });
+            }
+
+            async updateTodo(id, todoData) {
+                return await this.request('/api/todo/update', {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        id,
+                        ...todoData
+                    })
+                });
+            }
+
+            async deleteTodo(id) {
+                return await this.request(`/api/todo/delete/${id}`, {
+                    method: 'DELETE'
+                });
+            }
+
+            // 账单相关API
+            async getBills(userId) {
+                return await this.request(`/api/bill/list?userId=${userId}`);
+            }
+
+            async addBill(billData) {
+                const [type, category, amount, remark, date] = billData;
+                const bill = {
+                    userId: this.currentUser?.id,
+                    type,
+                    category,
+                    amount,
+                    remark,
+                    date
+                };
+                
+                return await this.request('/api/bill/add', {
+                    method: 'POST',
+                    body: JSON.stringify(bill)
+                });
+            }
+
+            async updateBill(id, billData) {
+                return await this.request('/api/bill/update', {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        id,
+                        ...billData
+                    })
+                });
+            }
+
+            async deleteBill(id) {
+                return await this.request(`/api/bill/delete/${id}`, {
+                    method: 'DELETE'
+                });
+            }
+
+            // 统计数据API
+            async getTodoStats(userId) {
+                const todos = await this.getTodos(userId);
                 const today = new Date().toISOString().split('T')[0];
                 const currentMonth = new Date().toISOString().substring(0, 7);
                 
+                const monthTodos = todos.filter(t => t.date && t.date.startsWith(currentMonth));
                 const monthStats = {
-                    total: todos.filter(t => t.date && t.date.startsWith(currentMonth)).length,
-                    done: todos.filter(t => t.date && t.date.startsWith(currentMonth) && t.status === 1).length,
-                    undone: todos.filter(t => t.date && t.date.startsWith(currentMonth) && t.status === 0).length
+                    total: monthTodos.length,
+                    done: monthTodos.filter(t => t.status === 1).length,
+                    undone: monthTodos.filter(t => t.status === 0).length
                 };
                 
                 return monthStats;
             }
 
-            getBillStats(userId) {
-                const bills = this.getBills(userId);
-                const today = new Date().toISOString().split('T')[0];
+            async getBillStats(userId) {
+                const bills = await this.getBills(userId);
                 const currentMonth = new Date().toISOString().substring(0, 7);
                 
-                const monthIncome = bills
-                    .filter(b => b.type === 1 && b.date && b.date.startsWith(currentMonth))
+                const monthBills = bills.filter(b => b.date && b.date.startsWith(currentMonth));
+                const monthIncome = monthBills
+                    .filter(b => b.type === 1)
                     .reduce((sum, b) => sum + b.amount, 0);
-                const monthExpense = bills
-                    .filter(b => b.type === 2 && b.date && b.date.startsWith(currentMonth))
+                const monthExpense = monthBills
+                    .filter(b => b.type === 2)
                     .reduce((sum, b) => sum + b.amount, 0);
                 
                 return {
@@ -1897,9 +1873,9 @@
             }
 
             // 获取日历事件
-            getCalendarEvents(userId, year, month) {
-                const todos = this.getTodos(userId);
-                const bills = this.getBills(userId);
+            async getCalendarEvents(userId, year, month) {
+                const todos = await this.getTodos(userId);
+                const bills = await this.getBills(userId);
                 const events = {};
                 
                 // 筛选指定月份的待办事项
@@ -1933,12 +1909,35 @@
                 
                 return events;
             }
+
+            // 工具方法
+            extractDateFromEndTime(endTime) {
+                if (!endTime) return '';
+                
+                try {
+                    const dateObj = new Date(endTime);
+                    if (isNaN(dateObj.getTime())) return '';
+                    
+                    const year = dateObj.getFullYear();
+                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const day = String(dateObj.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                } catch (error) {
+                    console.error('提取日期失败:', error);
+                    return '';
+                }
+            }
+
+            // 设置当前用户
+            setCurrentUser(user) {
+                this.currentUser = user;
+            }
         }
 
         // 应用主控制器
         class DailyMateApp {
             constructor() {
-                this.dataManager = new DataManager();
+                this.apiManager = new APIManager();
                 this.currentDate = new Date();
                 this.selectedDate = this.currentDate.getDate();
                 this.currentMenu = 'todo';
@@ -1954,26 +1953,28 @@
                 this.init();
             }
 
-            init() {
+            async init() {
                 this.cacheElements();
                 this.bindEvents();
-                this.setupBackendUser();
+                await this.loadCurrentUser();
                 this.initCalendar();
                 this.setTodayDate();
-                this.loadData();
+                await this.loadData();
             }
 
-            setupBackendUser() {
-                // 从localStorage中获取后端用户信息
-                const backendUserStr = localStorage.getItem('dailyMate_user');
-                if (backendUserStr) {
-                    try {
-                        const backendUser = JSON.parse(backendUserStr);
-                        // 转换为前端格式
-                        this.dataManager.setCurrentUserFromBackend(backendUser);
-                    } catch (error) {
-                        console.error('解析后端用户信息失败:', error);
+            async loadCurrentUser() {
+                try {
+                    const user = await this.apiManager.getCurrentUser();
+                    if (user) {
+                        this.apiManager.setCurrentUser(user);
+                        this.usernameDisplay.textContent = user.username;
+                        this.userAvatar.src = user.avatar || 'https://img.icons8.com/color/48/000000/user-male-circle--v2.png';
+                    } else {
+                        throw new Error('无法获取用户信息');
                     }
+                } catch (error) {
+                    console.error('加载用户失败:', error);
+                    this.apiManager.handleUnauthorized();
                 }
             }
 
@@ -2147,13 +2148,13 @@
             }
             
             // 获取指定日期的统计数据
-            getDateStats(dateObj) {
-                if (!this.dataManager.currentUser) return null;
-                const userId = this.dataManager.currentUser.id;
+            async getDateStats(dateObj) {
+                if (!this.apiManager.currentUser) return null;
+                const userId = this.apiManager.currentUser.id;
                 const dateStr = this.formatDate(dateObj);
                 
                 // 获取待办事项
-                const todos = this.dataManager.getTodos(userId);
+                const todos = await this.apiManager.getTodos(userId);
                 const dateTodos = todos.filter(t => t.date === dateStr);
                 const todoStats = {
                     total: dateTodos.length,
@@ -2162,7 +2163,7 @@
                 };
                 
                 // 获取账单数据
-                const bills = this.dataManager.getBills(userId);
+                const bills = await this.apiManager.getBills(userId);
                 const dateBills = bills.filter(b => b.date === dateStr);
                 const billStats = {
                     income: dateBills.filter(b => b.type === 1).reduce((sum, b) => sum + b.amount, 0),
@@ -2185,8 +2186,8 @@
             }
 
             // 更新日期预览卡片
-            updateDatePreview(dateObj) {
-                const stats = this.getDateStats(dateObj);
+            async updateDatePreview(dateObj) {
+                const stats = await this.getDateStats(dateObj);
                 if (!stats) return;
                 
                 const year = dateObj.getFullYear();
@@ -2233,11 +2234,20 @@
                 const now = new Date();
                 const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
                 const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
-                document.getElementById('todoStartTime').value = this.dataManager.convertFromISOString(startTime.toISOString());
-                document.getElementById('todoEndTime').value = this.dataManager.convertFromISOString(endTime.toISOString());
+                document.getElementById('todoStartTime').value = this.formatDateTimeLocal(startTime);
+                document.getElementById('todoEndTime').value = this.formatDateTimeLocal(endTime);
             }
 
-            renderCalendar() {
+            formatDateTimeLocal(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+
+            async renderCalendar() {
                 const year = this.currentDate.getFullYear();
                 const month = this.currentDate.getMonth();
                 
@@ -2275,9 +2285,9 @@
                 
                 // 获取当前用户的日历事件
                 const events = {};
-                if (this.dataManager.currentUser) {
-                    Object.assign(events, this.dataManager.getCalendarEvents(
-                        this.dataManager.currentUser.id, 
+                if (this.apiManager.currentUser) {
+                    Object.assign(events, await this.apiManager.getCalendarEvents(
+                        this.apiManager.currentUser.id, 
                         year, 
                         month
                     ));
@@ -2311,7 +2321,7 @@
                             if (events[i][j].type === 'todo') {
                                 dot.style.backgroundColor = events[i][j].status === 1 ? '#48bb78' : '#4299e1';
                             } else {
-                                dot.style.backgroundColor = events[i][j].type === 1 ? '#e53e3e' : '#38b2ac';
+                                dot.style.backgroundColor = '#38b2ac';
                             }
                             
                             dotContainer.appendChild(dot);
@@ -2351,9 +2361,9 @@
                 return cell;
             }
 
-            selectDate(day) {
+            async selectDate(day) {
                 this.selectedDate = day;
-                this.renderCalendar();
+                await this.renderCalendar();
                 const selectedDate = new Date(
                     this.currentDate.getFullYear(), 
                     this.currentDate.getMonth(), 
@@ -2370,11 +2380,11 @@
                 const now = new Date();
                 const startTime = new Date(year, month - 1, dayStr, now.getHours(), now.getMinutes());
                 const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
-                document.getElementById('todoStartTime').value = this.dataManager.convertFromISOString(startTime.toISOString());
-                document.getElementById('todoEndTime').value = this.dataManager.convertFromISOString(endTime.toISOString());
+                document.getElementById('todoStartTime').value = this.formatDateTimeLocal(startTime);
+                document.getElementById('todoEndTime').value = this.formatDateTimeLocal(endTime);
                 
                 // 更新日期预览卡片
-                this.updateDatePreview(selectedDate);
+                await this.updateDatePreview(selectedDate);
                 this.showNotification(`已选择 ${year}年${month}月${dayStr}日`, 'info');
             }
 
@@ -2429,34 +2439,31 @@
             }
 
             // 数据加载方法
-            loadData() {
-                this.updateUserInfo();
-                this.updateStats();
-                this.renderCalendar();
+            async loadData() {
+                await this.updateUserInfo();
+                await this.updateStats();
+                await this.renderCalendar();
                 // 初始化显示今日预览
-                this.updateDatePreview(new Date());
-                this.renderTodoTable();
-                this.renderBillTable();
+                await this.updateDatePreview(new Date());
+                await this.renderTodoTable();
+                await this.renderBillTable();
             }
 
-            updateUserInfo() {
-                if (this.dataManager.currentUser) {
-                    this.usernameDisplay.textContent = this.dataManager.currentUser.username;
-                    this.userAvatar.src = this.dataManager.currentUser.avatar;
-                }
+            async updateUserInfo() {
+                // 已在init中加载
             }
 
-            updateStats() {
-                if (!this.dataManager.currentUser) return;
-                const userId = this.dataManager.currentUser.id;
+            async updateStats() {
+                if (!this.apiManager.currentUser) return;
+                const userId = this.apiManager.currentUser.id;
                 
                 // 获取待办事项统计
-                const todoStats = this.dataManager.getTodoStats(userId);
+                const todoStats = await this.apiManager.getTodoStats(userId);
                 this.todoDoneEl.textContent = todoStats.done;
                 this.todoUndoneEl.textContent = todoStats.undone;
                 
                 // 获取账单统计
-                const billStats = this.dataManager.getBillStats(userId);
+                const billStats = await this.apiManager.getBillStats(userId);
                 this.expenseAmountEl.textContent = billStats.month.expense.toFixed(2);
                 this.incomeAmountEl.textContent = billStats.month.income.toFixed(2);
                 
@@ -2464,14 +2471,14 @@
                 const currentPreviewDate = document.getElementById('currentPreviewDate').value;
                 const today = this.formatDate(new Date());
                 if (!currentPreviewDate || currentPreviewDate === today) {
-                    this.updateDatePreview(new Date());
+                    await this.updateDatePreview(new Date());
                 }
             }
 
             // 待办事项表格渲染
-            renderTodoTable() {
-                if (!this.dataManager.currentUser) return;
-                let todos = this.dataManager.getTodos(this.dataManager.currentUser.id);
+            async renderTodoTable() {
+                if (!this.apiManager.currentUser) return;
+                let todos = await this.apiManager.getTodos(this.apiManager.currentUser.id);
                 
                 // 分类筛选
                 if (this.todoFilter === 'done') {
@@ -2573,9 +2580,9 @@
             }
 
             // 账单表格渲染
-            renderBillTable() {
-                if (!this.dataManager.currentUser) return;
-                let bills = this.dataManager.getBills(this.dataManager.currentUser.id);
+            async renderBillTable() {
+                if (!this.apiManager.currentUser) return;
+                let bills = await this.apiManager.getBills(this.apiManager.currentUser.id);
                 
                 // 分类筛选
                 if (this.billFilter === 'income') {
@@ -2751,12 +2758,16 @@
                 const now = new Date();
                 const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
                 const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
-                document.getElementById('todoStartTime').value = this.dataManager.convertFromISOString(startTime.toISOString());
-                document.getElementById('todoEndTime').value = this.dataManager.convertFromISOString(endTime.toISOString());
+                document.getElementById('todoStartTime').value = this.formatDateTimeLocal(startTime);
+                document.getElementById('todoEndTime').value = this.formatDateTimeLocal(endTime);
             }
 
-            fillTodoForm(todoId) {
-                const todo = this.dataManager.todos.find(t => t.id === todoId && t.userId === this.dataManager.currentUser.id);
+            async fillTodoForm(todoId) {
+                // 这里需要获取单个待办的详情
+                // 由于API文档中没有单独的查询单个待办接口，我们可以通过获取所有待办然后筛选
+                const todos = await this.apiManager.getTodos(this.apiManager.currentUser.id);
+                const todo = todos.find(t => t.id === todoId);
+                
                 if (!todo) return;
                 
                 document.getElementById('todoId').value = todo.id;
@@ -2767,13 +2778,15 @@
                 
                 // 转换时间格式以便在datetime-local输入框中显示
                 if (todo.startTime) {
-                    document.getElementById('todoStartTime').value = this.dataManager.convertFromISOString(todo.startTime);
+                    const startDate = new Date(todo.startTime);
+                    document.getElementById('todoStartTime').value = this.formatDateTimeLocal(startDate);
                 } else {
                     document.getElementById('todoStartTime').value = '';
                 }
                 
                 if (todo.endTime) {
-                    document.getElementById('todoEndTime').value = this.dataManager.convertFromISOString(todo.endTime);
+                    const endDate = new Date(todo.endTime);
+                    document.getElementById('todoEndTime').value = this.formatDateTimeLocal(endDate);
                 } else {
                     document.getElementById('todoEndTime').value = '';
                 }
@@ -2800,49 +2813,52 @@
                     return;
                 }
                 
-                // 转换时间格式
-                const startTimeISO = startTime ? this.dataManager.convertToISOString(startTime) : '';
-                const endTimeISO = this.dataManager.convertToISOString(endTime);
-                
-                if (id) {
-                    // 更新待办事项
-                    const success = this.dataManager.updateTodo(parseInt(id), {
-                        title,
-                        content,
-                        priority,
-                        status,
-                        startTime: startTimeISO,
-                        endTime: endTimeISO
-                    });
+                try {
+                    const todoData = [title, content, priority, status, startTime, endTime];
                     
-                    if (success) {
+                    if (id) {
+                        // 更新待办事项
+                        const todoUpdateData = {
+                            title,
+                            content,
+                            priority,
+                            status,
+                            startTime: startTime ? new Date(startTime).toISOString() : null,
+                            endTime: endTime ? new Date(endTime).toISOString() : null
+                        };
+                        
+                        await this.apiManager.updateTodo(parseInt(id), todoUpdateData);
                         this.showNotification('待办事项已更新');
                         this.hideTodoModal();
-                        this.renderTodoTable();
-                        this.updateStats();
+                        await this.renderTodoTable();
+                        await this.updateStats();
+                        
                         // 更新预览卡片
                         const previewDateStr = document.getElementById('currentPreviewDate').value;
                         if (previewDateStr) {
                             const previewDate = new Date(previewDateStr);
-                            this.updateDatePreview(previewDate);
+                            await this.updateDatePreview(previewDate);
                         }
-                        this.renderCalendar();
+                        await this.renderCalendar();
+                    } else {
+                        // 添加新待办事项
+                        await this.apiManager.addTodo(todoData);
+                        this.showNotification('待办事项已添加');
+                        this.hideTodoModal();
+                        await this.renderTodoTable();
+                        await this.updateStats();
+                        
+                        // 更新预览卡片
+                        const previewDateStr = document.getElementById('currentPreviewDate').value;
+                        if (previewDateStr) {
+                            const previewDate = new Date(previewDateStr);
+                            await this.updateDatePreview(previewDate);
+                        }
+                        await this.renderCalendar();
                     }
-                } else {
-                    // 添加新待办事项
-                    const todoData = [title, content, priority, status, startTimeISO, endTimeISO];
-                    this.dataManager.addTodo(todoData);
-                    this.showNotification('待办事项已添加');
-                    this.hideTodoModal();
-                    this.renderTodoTable();
-                    this.updateStats();
-                    // 更新预览卡片
-                    const previewDateStr = document.getElementById('currentPreviewDate').value;
-                    if (previewDateStr) {
-                        const previewDate = new Date(previewDateStr);
-                        this.updateDatePreview(previewDate);
-                    }
-                    this.renderCalendar();
+                } catch (error) {
+                    console.error('操作失败:', error);
+                    this.showNotification(error.message || '操作失败', 'error');
                 }
             }
 
@@ -2852,18 +2868,22 @@
 
             async deleteTodo(todoId) {
                 if (confirm('确定要删除这个待办事项吗？')) {
-                    const success = this.dataManager.deleteTodo(todoId);
-                    if (success) {
+                    try {
+                        await this.apiManager.deleteTodo(todoId);
                         this.showNotification('待办事项已删除');
-                        this.renderTodoTable();
-                        this.updateStats();
+                        await this.renderTodoTable();
+                        await this.updateStats();
+                        
                         // 更新预览卡片
                         const previewDateStr = document.getElementById('currentPreviewDate').value;
                         if (previewDateStr) {
                             const previewDate = new Date(previewDateStr);
-                            this.updateDatePreview(previewDate);
+                            await this.updateDatePreview(previewDate);
                         }
-                        this.renderCalendar();
+                        await this.renderCalendar();
+                    } catch (error) {
+                        console.error('删除失败:', error);
+                        this.showNotification(error.message || '删除失败', 'error');
                     }
                 }
             }
@@ -2918,8 +2938,11 @@
                 document.getElementById('billDate').value = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             }
 
-            fillBillForm(billId) {
-                const bill = this.dataManager.bills.find(b => b.id === billId && b.userId === this.dataManager.currentUser.id);
+            async fillBillForm(billId) {
+                // 这里需要获取单个账单的详情
+                const bills = await this.apiManager.getBills(this.apiManager.currentUser.id);
+                const bill = bills.find(b => b.id === billId);
+                
                 if (!bill) return;
                 
                 document.getElementById('billId').value = bill.id;
@@ -2955,45 +2978,51 @@
                     return;
                 }
                 
-                const billData = [type, category, amount, remark, date];
-                
-                if (id) {
-                    // 更新账单
-                    const success = this.dataManager.updateBill(parseInt(id), {
-                        type,
-                        category,
-                        amount,
-                        remark,
-                        date
-                    });
+                try {
+                    const billData = [type, category, amount, remark, date];
                     
-                    if (success) {
+                    if (id) {
+                        // 更新账单
+                        const billUpdateData = {
+                            type,
+                            category,
+                            amount,
+                            remark,
+                            date
+                        };
+                        
+                        await this.apiManager.updateBill(parseInt(id), billUpdateData);
                         this.showNotification('账单已更新');
                         this.hideBillModal();
-                        this.renderBillTable();
-                        this.updateStats();
+                        await this.renderBillTable();
+                        await this.updateStats();
+                        
                         // 更新预览卡片
                         const previewDateStr = document.getElementById('currentPreviewDate').value;
                         if (previewDateStr) {
                             const previewDate = new Date(previewDateStr);
-                            this.updateDatePreview(previewDate);
+                            await this.updateDatePreview(previewDate);
                         }
-                        this.renderCalendar();
+                        await this.renderCalendar();
+                    } else {
+                        // 添加新账单
+                        await this.apiManager.addBill(billData);
+                        this.showNotification('账单已添加');
+                        this.hideBillModal();
+                        await this.renderBillTable();
+                        await this.updateStats();
+                        
+                        // 更新预览卡片
+                        const previewDateStr = document.getElementById('currentPreviewDate').value;
+                        if (previewDateStr) {
+                            const previewDate = new Date(previewDateStr);
+                            await this.updateDatePreview(previewDate);
+                        }
+                        await this.renderCalendar();
                     }
-                } else {
-                    // 添加新账单
-                    this.dataManager.addBill(billData);
-                    this.showNotification('账单已添加');
-                    this.hideBillModal();
-                    this.renderBillTable();
-                    this.updateStats();
-                    // 更新预览卡片
-                    const previewDateStr = document.getElementById('currentPreviewDate').value;
-                    if (previewDateStr) {
-                        const previewDate = new Date(previewDateStr);
-                        this.updateDatePreview(previewDate);
-                    }
-                    this.renderCalendar();
+                } catch (error) {
+                    console.error('操作失败:', error);
+                    this.showNotification(error.message || '操作失败', 'error');
                 }
             }
 
@@ -3003,18 +3032,22 @@
 
             async deleteBill(billId) {
                 if (confirm('确定要删除这个账单吗？')) {
-                    const success = this.dataManager.deleteBill(billId);
-                    if (success) {
+                    try {
+                        await this.apiManager.deleteBill(billId);
                         this.showNotification('账单已删除');
-                        this.renderBillTable();
-                        this.updateStats();
+                        await this.renderBillTable();
+                        await this.updateStats();
+                        
                         // 更新预览卡片
                         const previewDateStr = document.getElementById('currentPreviewDate').value;
                         if (previewDateStr) {
                             const previewDate = new Date(previewDateStr);
-                            this.updateDatePreview(previewDate);
+                            await this.updateDatePreview(previewDate);
                         }
-                        this.renderCalendar();
+                        await this.renderCalendar();
+                    } catch (error) {
+                        console.error('删除失败:', error);
+                        this.showNotification(error.message || '删除失败', 'error');
                     }
                 }
             }
@@ -3023,9 +3056,8 @@
             handleLogout() {
                 if (confirm('确定要退出登录吗？')) {
                     // 清除所有登录信息
-                    localStorage.removeItem('dailyMate_token');
-                    localStorage.removeItem('dailyMate_user');
-                    localStorage.removeItem('dailyMate_currentUser');
+                    localStorage.removeItem(API_CONFIG.TOKEN_KEY);
+                    localStorage.removeItem(API_CONFIG.USER_KEY);
                     
                     this.showNotification('已退出登录');
                     // 跳转到登录页
@@ -3068,70 +3100,57 @@
         }
 
         // DOM加载完成后执行
-// DOM加载完成后执行
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM加载完成，检查登录状态...');
-    
-    // 直接从 localStorage 获取 token 和 user
-    const token = localStorage.getItem('dailyMate_token');
-    const userStr = localStorage.getItem('dailyMate_user');
-    
-    console.log('Token 存在:', !!token);
-    console.log('User 存在:', !!userStr);
-    
-    const loginCheckPage = document.getElementById('loginCheckPage');
-    const appPage = document.getElementById('appPage');
-    const goToLoginBtn = document.getElementById('goToLoginBtn');
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM加载完成，检查登录状态...');
+            
+            // 直接从 localStorage 获取 token 和 user
+            const token = localStorage.getItem(API_CONFIG.TOKEN_KEY);
+            const userStr = localStorage.getItem(API_CONFIG.USER_KEY);
+            
+            console.log('Token 存在:', !!token);
+            console.log('User 存在:', !!userStr);
+            
+            const loginCheckPage = document.getElementById('loginCheckPage');
+            const appPage = document.getElementById('appPage');
+            const goToLoginBtn = document.getElementById('goToLoginBtn');
 
-    // 跳转到登录页
-    if (goToLoginBtn) {
-        goToLoginBtn.onclick = () => {
-            window.location.href = 'login.html';
-        };
-    }
+            // 跳转到登录页
+            if (goToLoginBtn) {
+                goToLoginBtn.onclick = () => {
+                    window.location.href = 'login.html';
+                };
+            }
 
-    // 调试：打印详细登录信息
-    if (userStr) {
-        try {
-            const user = JSON.parse(userStr);
-            console.log('用户ID:', user.id);
-            console.log('用户名:', user.username);
-        } catch (e) {
-            console.error('解析用户信息失败:', e);
-        }
-    }
-
-    // 检查是否有token和user（user可以是空对象，但必须有值）
-    if (token && userStr) {
-        console.log('登录状态验证通过，显示主应用页面');
-        
-        // 隐藏登录检查页面，显示主应用页面
-        if (loginCheckPage) loginCheckPage.classList.add('hidden');
-        if (appPage) {
-            appPage.classList.remove('hidden');
-            console.log('主应用页面已显示');
-        }
-        
-        // 初始化主应用
-        try {
-            console.log('正在初始化 DailyMateApp...');
-            window.app = new DailyMateApp();
-            console.log('DailyMateApp 初始化成功');
-        } catch (error) {
-            console.error('初始化应用失败:', error);
-            // 如果初始化失败，跳转到登录页
-            localStorage.removeItem('dailyMate_token');
-            localStorage.removeItem('dailyMate_user');
-            localStorage.removeItem('dailyMate_currentUser');
-            window.location.href = 'login.html';
-        }
-    } else {
-        console.log('登录状态验证失败，显示登录检查页面');
-        // 没有登录信息，显示登录检查页面
-        if (loginCheckPage) loginCheckPage.classList.remove('hidden');
-        if (appPage) appPage.classList.add('hidden');
-    }
-});
+            // 检查是否有token和user
+            if (token && userStr) {
+                console.log('登录状态验证通过，显示主应用页面');
+                
+                // 隐藏登录检查页面，显示主应用页面
+                if (loginCheckPage) loginCheckPage.classList.add('hidden');
+                if (appPage) {
+                    appPage.classList.remove('hidden');
+                    console.log('主应用页面已显示');
+                }
+                
+                // 初始化主应用
+                try {
+                    console.log('正在初始化 DailyMateApp...');
+                    window.app = new DailyMateApp();
+                    console.log('DailyMateApp 初始化成功');
+                } catch (error) {
+                    console.error('初始化应用失败:', error);
+                    // 如果初始化失败，跳转到登录页
+                    localStorage.removeItem(API_CONFIG.TOKEN_KEY);
+                    localStorage.removeItem(API_CONFIG.USER_KEY);
+                    window.location.href = 'login.html';
+                }
+            } else {
+                console.log('登录状态验证失败，显示登录检查页面');
+                // 没有登录信息，显示登录检查页面
+                if (loginCheckPage) loginCheckPage.classList.remove('hidden');
+                if (appPage) appPage.classList.add('hidden');
+            }
+        });
     </script>
 </body>
 </html>
