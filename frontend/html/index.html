@@ -3058,7 +3058,7 @@
                     // 清除所有登录信息
                     localStorage.removeItem(API_CONFIG.TOKEN_KEY);
                     localStorage.removeItem(API_CONFIG.USER_KEY);
-                    
+                    localStorage.removeItem('dailyMate_currentUser');
                     this.showNotification('已退出登录');
                     // 跳转到登录页
                     setTimeout(() => {

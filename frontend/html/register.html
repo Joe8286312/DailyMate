@@ -652,10 +652,14 @@
                     });
                     const data = await response.json();
                     if (data.success) {
+                        // 注册成功后，清理所有登录状态
+                        localStorage.removeItem(API_CONFIG.TOKEN_KEY);
+                        localStorage.removeItem(API_CONFIG.USER_KEY);
+                        localStorage.removeItem('dailyMate_currentUser');
                         authManager.showSuccess('registerSuccess', '注册成功！正在跳转到登录页面...');
                         setTimeout(() => {
                             window.location.href = 'login.html';
-                        }, 1500);
+                        }, 2000);
                     } else {
                         authManager.showError('registerError', data.msg || data.message || '注册失败');
                     }
