@@ -1143,9 +1143,11 @@
 
         /* 优化数字输入框 */
         input[type="number"].form-input {
+            -webkit-appearance: none;
+            -moz-appearance: textfield;
             appearance: textfield;
         }
-
+        
         input[type="number"].form-input::-webkit-inner-spin-button,
         input[type="number"].form-input::-webkit-outer-spin-button {
             opacity: 0.6;
@@ -1329,6 +1331,157 @@
         .user-name:hover {
             background-color: #e0f2fe;
         }
+
+        /* 批量操作样式 */
+        .batch-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            align-items: center;
+            padding: 15px;
+            background-color: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+
+        .batch-actions.hidden {
+            display: none;
+        }
+
+        .batch-btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .complete-btn {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+        }
+
+        .incomplete-btn {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #e53e3e, #c53030);
+            color: white;
+        }
+
+        .batch-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .selected-count {
+            font-size: 14px;
+            color: #4299e1;
+            font-weight: 600;
+            margin-left: auto;
+            padding: 6px 12px;
+            background-color: #e0f2fe;
+            border-radius: 20px;
+        }
+
+        /* 复选框样式 */
+        .todo-checkbox {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid #cbd5e0;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-color: white;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .todo-checkbox:checked {
+            background-color: #4299e1;
+            border-color: #4299e1;
+        }
+
+        .todo-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            color: white;
+            font-size: 14px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+        }
+
+        .todo-checkbox:hover {
+            border-color: #4299e1;
+        }
+
+        .select-all-checkbox {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid #cbd5e0;
+            background-color: white;
+            transition: all 0.3s;
+        }
+
+        .select-all-checkbox:checked {
+            background-color: #4299e1;
+            border-color: #4299e1;
+        }
+
+        .select-all-checkbox:hover {
+            border-color: #4299e1;
+        }
+
+        /* 响应式调整：在移动端调整批量操作按钮 */
+        @media (max-width: 768px) {
+            .batch-actions {
+                flex-wrap: wrap;
+            }
+            
+            .batch-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+            
+            .selected-count {
+                margin-left: 0;
+                margin-top: 10px;
+                order: 5;
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        .clear-search-btn-small {
+            background: transparent;
+            border: none;
+            color: #4299e1;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: all 0.3s;
+            text-decoration: underline;
+        }
+
+        .clear-search-btn-small:hover {
+            background-color: #e0f2fe;
+        }
     </style>
 </head>
 <body>
@@ -1438,6 +1591,22 @@
                             <i class="fas fa-plus"></i> 添加待办
                         </button>
                     </div>
+                    <!-- 在 data-header 和 category-tabs 之间添加批量操作工具栏 -->
+                    <div class="batch-actions hidden" id="todoBatchActions">
+                        <button id="batchCompleteBtn" class="btn batch-btn complete-btn">
+                            <i class="fas fa-check-circle"></i> 批量完成
+                        </button>
+                        <button id="batchIncompleteBtn" class="btn batch-btn incomplete-btn">
+                            <i class="fas fa-times-circle"></i> 批量未完成
+                        </button>
+                        <button id="batchDeleteBtn" class="btn batch-btn delete-btn">
+                            <i class="fas fa-trash-alt"></i> 批量删除
+                        </button>
+                        <button id="clearSelectionBtn" class="btn btn-cancel">
+                            <i class="fas fa-times"></i> 取消选择
+                        </button>
+                        <span class="selected-count" id="selectedCount">已选择 0 项</span>
+                    </div>
                     <!-- 分类选项卡 -->
                     <div class="category-tabs">
                         <button class="category-tab active" data-filter="all">全部</button>
@@ -1458,6 +1627,10 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
+                                    <th width="50">
+                                        <label for="selectAllTodos" class="visually-hidden">全选待办事项</label>
+                                        <input type="checkbox" id="selectAllTodos" class="select-all-checkbox" title="全选待办事项">
+                                    </th>
                                     <th>标题</th>
                                     <th>内容</th>
                                     <th>优先级</th>
@@ -1827,7 +2000,12 @@
                     // 关键修复：如果没有内容，直接返回null
                     const text = await response.text();
                     if (!text) return null;
-                    return JSON.parse(text);
+                    if (text === "OK") return { message: "OK" };
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        return text;
+                    }
                 } catch (error) {
                     console.error('API请求失败:', error);
                     throw error;
@@ -2012,6 +2190,57 @@
                 return events;
             }
 
+            // 在 APIManager 类中添加以下方法（放在 getCalendarEvents 方法后面）
+
+            // 批量更新待办事项状态
+            async batchUpdateTodoStatus(todoIds, status) {
+                try {
+                    const response = await this.request('/api/todo/batch/finish', {
+                        method: 'PUT',
+                        body: JSON.stringify({
+                            ids: todoIds,
+                            status: status
+                        })
+                    });
+                    return response;
+                } catch (error) {
+                    console.error('批量更新状态失败:', error);
+                    throw error;
+                }
+            }
+
+            // 批量删除待办事项
+            async batchDeleteTodos(todoIds) {
+                try {
+                    const response = await this.request('/api/todo/batch/delete', {
+                        method: 'PUT',
+                        body: JSON.stringify({
+                            ids: todoIds
+                        })
+                    });
+                    return response;
+                } catch (error) {
+                    console.error('批量删除失败:', error);
+                    throw error;
+                }
+            }
+
+            // 批量彻底删除待办事项
+            async batchHardDeleteTodos(todoIds) {
+                try {
+                    const response = await this.request('/api/todo/batch/hard-delete', {
+                        method: 'PUT',
+                        body: JSON.stringify({
+                            ids: todoIds
+                        })
+                    });
+                    return response;
+                } catch (error) {
+                    console.error('批量彻底删除失败:', error);
+                    throw error;
+                }
+            }
+
             // 工具方法
             extractDateFromEndTime(endTime) {
                 if (!endTime) return '';
@@ -2077,7 +2306,7 @@
                                 billCategory.appendChild(option);
                             });
                         }
-            constructor() {
+             constructor() {
                 this.apiManager = new APIManager();
                 this.currentDate = new Date();
                 this.selectedDate = this.currentDate.getDate();
@@ -2090,6 +2319,10 @@
                 // 初始化属性
                 this.todoFilter = 'all';
                 this.billFilter = 'all';
+                
+                // 批量操作相关
+                this.selectedTodoIds = new Set();
+                this.isSelectAll = false;
                 
                 this.init();
             }
@@ -2179,6 +2412,15 @@
                 // 用户模态框元素
                 this.userProfileModal = document.getElementById('userProfileModal');
                 this.changePasswordModal = document.getElementById('changePasswordModal');
+
+                 // 批量操作元素
+                this.selectAllTodosCheckbox = document.getElementById('selectAllTodos');
+                this.batchCompleteBtn = document.getElementById('batchCompleteBtn');
+                this.batchIncompleteBtn = document.getElementById('batchIncompleteBtn');
+                this.batchDeleteBtn = document.getElementById('batchDeleteBtn');
+                this.clearSelectionBtn = document.getElementById('clearSelectionBtn');
+                this.selectedCountElement = document.getElementById('selectedCount');
+                this.batchActionsElement = document.getElementById('todoBatchActions');
             }
 
             bindEvents() {
@@ -2298,6 +2540,179 @@
                 this.changePasswordModal.addEventListener('click', (e) => {
                     if (e.target === this.changePasswordModal) this.hideChangePasswordModal();
                 });
+
+                // 批量操作事件
+                if (this.selectAllTodosCheckbox) {
+                    this.selectAllTodosCheckbox.addEventListener('change', (e) => this.handleSelectAllTodos(e));
+                }
+                
+                if (this.batchCompleteBtn) {
+                    this.batchCompleteBtn.addEventListener('click', () => this.batchUpdateTodoStatus(1));
+                }
+                
+                if (this.batchIncompleteBtn) {
+                    this.batchIncompleteBtn.addEventListener('click', () => this.batchUpdateTodoStatus(0));
+                }
+                
+                if (this.batchDeleteBtn) {
+                    this.batchDeleteBtn.addEventListener('click', () => this.batchDeleteTodos());
+                }
+                
+                if (this.clearSelectionBtn) {
+                    this.clearSelectionBtn.addEventListener('click', () => this.clearSelection());
+                }
+            }
+
+            // 处理全选/取消全选
+            handleSelectAllTodos(e) {
+                const isChecked = e.target.checked;
+                this.isSelectAll = isChecked;
+                const checkboxes = document.querySelectorAll('.todo-checkbox');
+                
+                this.selectedTodoIds.clear();
+                
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = isChecked;
+                    if (isChecked) {
+                        const todoId = parseInt(checkbox.value);
+                        this.selectedTodoIds.add(todoId);
+                    }
+                });
+                
+                this.updateSelectedCount();
+            }
+            
+            // 处理单个待办事项复选框变化
+            handleTodoCheckboxChange(todoId, isChecked) {
+                if (isChecked) {
+                    this.selectedTodoIds.add(todoId);
+                } else {
+                    this.selectedTodoIds.delete(todoId);
+                    // 如果取消选中，取消全选状态
+                    if (this.selectAllTodosCheckbox && this.isSelectAll) {
+                        this.selectAllTodosCheckbox.checked = false;
+                        this.isSelectAll = false;
+                    }
+                }
+                
+                this.updateSelectedCount();
+            }
+            
+            // 更新选中数量显示
+            updateSelectedCount() {
+                const count = this.selectedTodoIds.size;
+                
+                if (this.selectedCountElement) {
+                    this.selectedCountElement.textContent = `已选择 ${count} 项`;
+                }
+                
+                if (this.batchActionsElement) {
+                    if (count > 0) {
+                        this.batchActionsElement.classList.remove('hidden');
+                    } else {
+                        this.batchActionsElement.classList.add('hidden');
+                    }
+                }
+            }
+            
+            // 批量更新待办事项状态
+            async batchUpdateTodoStatus(status) {
+                if (this.selectedTodoIds.size === 0) {
+                    this.showNotification('请先选择待办事项', 'error');
+                    return;
+                }
+                
+                const actionText = status === 1 ? '完成' : '未完成';
+                if (!confirm(`确定要将选中的 ${this.selectedTodoIds.size} 个待办事项标记为${actionText}吗？`)) {
+                    return;
+                }
+                
+                try {
+                    // 调用批量更新状态接口
+                    const todoIds = Array.from(this.selectedTodoIds);
+                    await this.apiManager.batchUpdateTodoStatus(todoIds, status);
+                    
+                    this.showNotification(`已成功更新 ${todoIds.length} 个待办事项`);
+                    
+                    // 清空选中
+                    this.clearSelection();
+                    
+                    // 更新所有相关显示
+                    await this.renderTodoTable();
+                    await this.updateStats();
+                    
+                    // 更新预览卡片
+                    const previewDateStr = document.getElementById('currentPreviewDate').value;
+                    if (previewDateStr) {
+                        const previewDate = new Date(previewDateStr);
+                        await this.updateDatePreview(previewDate);
+                    }
+                    
+                    // 更新日历显示
+                    await this.renderCalendar();
+                    
+                } catch (error) {
+                    console.error('批量操作失败:', error);
+                    this.showNotification(error.message || '批量操作失败', 'error');
+                }
+            }
+            
+            // 批量删除待办事项
+            async batchDeleteTodos() {
+                if (this.selectedTodoIds.size === 0) {
+                    this.showNotification('请先选择待办事项', 'error');
+                    return;
+                }
+                
+                if (!confirm(`确定要删除选中的 ${this.selectedTodoIds.size} 个待办事项吗？删除后可以在回收站中恢复。`)) {
+                    return;
+                }
+                
+                try {
+                    // 调用批量删除接口
+                    const todoIds = Array.from(this.selectedTodoIds);
+                    await this.apiManager.batchDeleteTodos(todoIds);
+                    
+                    this.showNotification(`已成功删除 ${todoIds.length} 个待办事项`);
+                    
+                    // 清空选中
+                    this.clearSelection();
+                    
+                    // 更新所有相关显示
+                    await this.renderTodoTable();
+                    await this.updateStats();
+                    
+                    // 更新预览卡片
+                    const previewDateStr = document.getElementById('currentPreviewDate').value;
+                    if (previewDateStr) {
+                        const previewDate = new Date(previewDateStr);
+                        await this.updateDatePreview(previewDate);
+                    }
+                    
+                    // 更新日历显示
+                    await this.renderCalendar();
+                    
+                } catch (error) {
+                    console.error('批量删除失败:', error);
+                    this.showNotification(error.message || '批量删除失败', 'error');
+                }
+            }
+            
+            // 清空选择
+            clearSelection() {
+                this.selectedTodoIds.clear();
+                this.isSelectAll = false;
+                
+                const checkboxes = document.querySelectorAll('.todo-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                
+                if (this.selectAllTodosCheckbox) {
+                    this.selectAllTodosCheckbox.checked = false;
+                }
+                
+                this.updateSelectedCount();
             }
 
             // 分类筛选处理方法
@@ -2655,7 +3070,7 @@
                 }
             }
 
-            // 待办事项表格渲染
+            // 修改 renderTodoTable 方法，添加复选框
             async renderTodoTable() {
                 if (!this.apiManager.currentUser) return;
                 let todos = await this.apiManager.getTodos(this.apiManager.currentUser.id);
@@ -2727,6 +3142,9 @@
                         endTime = endDate.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
                     }
                     
+                    // 检查是否已选中
+                    const isChecked = this.selectedTodoIds.has(todo.id);
+                    
                     // 高亮搜索关键词
                     let highlightedTitle = todo.title;
                     let highlightedContent = todo.content || '-';
@@ -2740,6 +3158,9 @@
                     }
                     
                     row.innerHTML = `
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="todo-checkbox" value="${todo.id}" ${isChecked ? 'checked' : ''}>
+                        </td>
                         <td>${highlightedTitle}</td>
                         <td>${highlightedContent}</td>
                         <td><span class="priority-badge priority-${todo.priority}">${priorityText}</span></td>
@@ -2752,11 +3173,21 @@
                             <button class="action-btn delete-btn" onclick="app.deleteTodo(${todo.id})">删除</button>
                         </td>
                     `;
+                    
+                    // 为复选框添加事件监听
+                    const checkbox = row.querySelector('.todo-checkbox');
+                    checkbox.addEventListener('change', (e) => {
+                        this.handleTodoCheckboxChange(todo.id, e.target.checked);
+                    });
+                    
                     this.todoTableBody.appendChild(row);
                 });
                 
                 // 显示搜索结果统计
                 this.showSearchStats('todo', todos.length);
+                
+                // 更新批量操作栏的显示
+                this.updateSelectedCount();
             }
 
             // 账单表格渲染
