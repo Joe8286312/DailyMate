@@ -1699,36 +1699,32 @@
             // 统一API请求方法
             async request(endpoint, options = {}) {
                 const url = `${this.baseURL}${endpoint}`;
-                
                 const headers = {
                     'Content-Type': 'application/json',
                     ...options.headers
                 };
-                
                 if (this.token) {
                     headers['Authorization'] = `Bearer ${this.token}`;
                 }
-                
                 const config = {
                     ...options,
                     headers
                 };
-                
                 try {
                     const response = await fetch(url, config);
-                    
                     // 处理401未授权
                     if (response.status === 401) {
                         this.handleUnauthorized();
                         throw new Error('登录已过期，请重新登录');
                     }
-                    
                     if (!response.ok) {
                         const errorData = await response.json().catch(() => ({}));
                         throw new Error(errorData.msg || errorData.message || `请求失败: ${response.status}`);
                     }
-                    
-                    return await response.json();
+                    // 关键修复：如果没有内容，直接返回null
+                    const text = await response.text();
+                    if (!text) return null;
+                    return JSON.parse(text);
                 } catch (error) {
                     console.error('API请求失败:', error);
                     throw error;
@@ -1824,10 +1820,13 @@
             }
 
             async updateBill(id, billData) {
+                // billData 需补全 userId 字段
+                const userId = this.currentUser?.id;
                 return await this.request('/api/bill/update', {
                     method: 'PUT',
                     body: JSON.stringify({
                         id,
+                        userId,
                         ...billData
                     })
                 });
@@ -1936,6 +1935,45 @@
 
         // 应用主控制器
         class DailyMateApp {
+                        // 账单分类选项
+                        getIncomeCategories() {
+                            return [
+                                '工资收入',
+                                '其他收入'
+                            ];
+                        }
+                        getExpenseCategories() {
+                            return [
+                                '餐饮',
+                                '购物',
+                                '交通',
+                                '生活用品',
+                                '通讯',
+                                '住房',
+                                '娱乐',
+                                '医疗',
+                                '教育',
+                                '其他支出'
+                            ];
+                        }
+
+                        updateBillCategoryOptions(type, selected) {
+                            const billCategory = document.getElementById('billCategory');
+                            let categories = [];
+                            if (type === 1) {
+                                categories = this.getIncomeCategories();
+                            } else {
+                                categories = this.getExpenseCategories();
+                            }
+                            billCategory.innerHTML = '';
+                            categories.forEach(cat => {
+                                const option = document.createElement('option');
+                                option.value = cat;
+                                option.textContent = cat;
+                                if (selected && selected === cat) option.selected = true;
+                                billCategory.appendChild(option);
+                            });
+                        }
             constructor() {
                 this.apiManager = new APIManager();
                 this.currentDate = new Date();
@@ -2041,16 +2079,21 @@
                 this.todoCategoryTabs.forEach(tab => {
                     tab.addEventListener('click', (e) => this.handleTodoCategoryFilter(e));
                 });
-                
                 this.billCategoryTabs.forEach(tab => {
                     tab.addEventListener('click', (e) => this.handleBillCategoryFilter(e));
                 });
-                
+                // 账单类型切换事件
+                const billTypeSelect = document.getElementById('billType');
+                if (billTypeSelect) {
+                    billTypeSelect.addEventListener('change', (e) => {
+                        const type = parseInt(e.target.value);
+                        this.updateBillCategoryOptions(type);
+                    });
+                }
                 // 日历事件
                 this.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
                 this.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
                 this.calendarMonthEl.addEventListener('click', () => this.showMonthPicker());
-                
                 // 菜单切换事件
                 this.menuItems.forEach(item => {
                     item.addEventListener('click', (e) => {
@@ -2059,7 +2102,6 @@
                         this.switchMenu(menuId);
                     });
                 });
-                
                 // 待办事项事件
                 this.addTodoBtn.addEventListener('click', () => this.showTodoModal());
                 
@@ -2794,7 +2836,6 @@
 
             async handleTodoSubmit(e) {
                 e.preventDefault();
-                
                 const id = document.getElementById('todoId').value;
                 const title = document.getElementById('todoTitle').value.trim();
                 const content = document.getElementById('todoContentInput').value.trim();
@@ -2802,37 +2843,40 @@
                 const status = parseInt(document.getElementById('todoStatus').value);
                 const startTime = document.getElementById('todoStartTime').value;
                 const endTime = document.getElementById('todoEndTime').value;
-                
                 if (!title) {
                     this.showNotification('请填写标题', 'error');
                     return;
                 }
-                
                 if (!endTime) {
                     this.showNotification('请选择计划截止时间', 'error');
                     return;
                 }
-                
                 try {
                     const todoData = [title, content, priority, status, startTime, endTime];
-                    
                     if (id) {
-                        // 更新待办事项
+                        // 查出原todo，补全userId和date
+                        const todos = await this.apiManager.getTodos(this.apiManager.currentUser.id);
+                        const oldTodo = todos.find(t => t.id === parseInt(id));
+                        if (!oldTodo) {
+                            this.showNotification('原待办不存在', 'error');
+                            return;
+                        }
                         const todoUpdateData = {
+                            id: parseInt(id),
+                            userId: oldTodo.userId,
                             title,
                             content,
                             priority,
                             status,
+                            date: oldTodo.date,
                             startTime: startTime ? new Date(startTime).toISOString() : null,
                             endTime: endTime ? new Date(endTime).toISOString() : null
                         };
-                        
                         await this.apiManager.updateTodo(parseInt(id), todoUpdateData);
                         this.showNotification('待办事项已更新');
                         this.hideTodoModal();
                         await this.renderTodoTable();
                         await this.updateStats();
-                        
                         // 更新预览卡片
                         const previewDateStr = document.getElementById('currentPreviewDate').value;
                         if (previewDateStr) {
@@ -2847,7 +2891,6 @@
                         this.hideTodoModal();
                         await this.renderTodoTable();
                         await this.updateStats();
-                        
                         // 更新预览卡片
                         const previewDateStr = document.getElementById('currentPreviewDate').value;
                         if (previewDateStr) {
@@ -2926,10 +2969,9 @@
             resetBillForm() {
                 document.getElementById('billId').value = '';
                 document.getElementById('billType').value = '2';
-                document.getElementById('billCategory').value = '其他支出';
+                this.updateBillCategoryOptions(2, '其他支出');
                 document.getElementById('billAmount').value = '';
                 document.getElementById('billRemark').value = '';
-                
                 // 设置默认日期为今天
                 const today = new Date();
                 const year = today.getFullYear();
@@ -2942,15 +2984,21 @@
                 // 这里需要获取单个账单的详情
                 const bills = await this.apiManager.getBills(this.apiManager.currentUser.id);
                 const bill = bills.find(b => b.id === billId);
-                
                 if (!bill) return;
-                
                 document.getElementById('billId').value = bill.id;
                 document.getElementById('billType').value = bill.type;
-                document.getElementById('billCategory').value = bill.category;
+                this.updateBillCategoryOptions(bill.type, bill.category);
                 document.getElementById('billAmount').value = bill.amount;
                 document.getElementById('billRemark').value = bill.remark || '';
-                document.getElementById('billDate').value = bill.date || '';
+                // 确保日期格式为 yyyy-MM-dd
+                if (bill.date) {
+                    let dateStr = bill.date;
+                    // 若为 ISO 字符串，截取前10位
+                    if (dateStr.length > 10) dateStr = dateStr.slice(0, 10);
+                    document.getElementById('billDate').value = dateStr;
+                } else {
+                    document.getElementById('billDate').value = '';
+                }
             }
 
             async handleBillSubmit(e) {
