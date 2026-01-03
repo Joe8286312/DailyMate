@@ -52,20 +52,16 @@
                     <span class="auth-error" id="registerUsernameError"></span>
                 </div>
                 <div class="form-group">
-                    <label for="registerEmail">邮箱 (可选)</label>
-                    <input type="email" id="registerEmail" class="form-input" placeholder="请输入邮箱 (如不填写，将使用用户名@email.com)">
-                    <span class="auth-error" id="registerEmailError"></span>
-                    <small style="display: block; margin-top: 4px; color: #718096; font-size: 12px;">
-                        邮箱为选填项，如果不填写，系统将自动为您生成默认邮箱：用户名@email.com
-                    </small>
-                </div>
-                <div class="form-group">
                     <label for="registerPassword">密码 *</label>
                     <input type="password" id="registerPassword" class="form-input" placeholder="请输入密码" required>
                     <div class="password-strength">
                         <div class="strength-bar" id="passwordStrengthBar"></div>
                     </div>
                     <div class="strength-text" id="passwordStrengthText">密码强度: 弱</div>
+                    <small class="password-rules">
+                        密码规则：至少 6 位，包含数字、大写字母、小写字母、特殊字符中的任意一种；
+                        每多一种字符类型，密码强度会依次提升为弱、中等、强、很强。
+                    </small>
                     <span class="auth-error" id="registerPasswordError"></span>
                 </div>
                 <div class="form-group">
@@ -246,28 +242,20 @@
             // 检查密码强度
             checkPasswordStrength(password) {
                 let strength = 0;
+
+                const hasDigit = /[0-9]/.test(password);
+                const hasLower = /[a-z]/.test(password);
+                const hasUpper = /[A-Z]/.test(password);
+                const hasSpecial = /[^A-Za-z0-9]/.test(password);
+
+                if (hasDigit) strength++;
+                if (hasLower) strength++;
+                if (hasUpper) strength++;
+                if (hasSpecial) strength++;
+
                 let text = '';
-                
-                if (password.length >= 6) strength++;
-                if (password.length >= 8) strength++;
-                
-                // 检查是否包含数字
-                if (/[0-9]/.test(password)) strength++;
-                
-                // 检查是否包含特殊字符
-                if (/[^A-Za-z0-9]/.test(password)) strength++;
-                
-                // 检查是否包含大写字母和小写字母
-                if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-                
-                // 限制最大强度为4
-                strength = Math.min(strength, 4);
-                
-                // 设置强度文本
-                switch(strength) {
+                switch (strength) {
                     case 0:
-                        text = '非常弱';
-                        break;
                     case 1:
                         text = '弱';
                         break;
@@ -278,10 +266,10 @@
                         text = '强';
                         break;
                     case 4:
-                        text = '非常强';
+                        text = '很强';
                         break;
                 }
-                
+
                 return { strength, text };
             }
         }
@@ -293,7 +281,6 @@
             // 获取表单元素
             const registerForm = document.getElementById('registerForm');
             const registerUsername = document.getElementById('registerUsername');
-            const registerEmail = document.getElementById('registerEmail');
             const registerPassword = document.getElementById('registerPassword');
             const registerConfirmPassword = document.getElementById('registerConfirmPassword');
             const passwordStrengthBar = document.getElementById('passwordStrengthBar');
@@ -302,31 +289,30 @@
             // 密码强度实时检查
             registerPassword.addEventListener('input', () => {
                 const password = registerPassword.value;
+                if (!password) {
+                    if (passwordStrengthBar) {
+                        passwordStrengthBar.className = 'strength-bar strength-0';
+                    }
+                    passwordStrengthText.textContent = '密码强度: 弱';
+                    return;
+                }
+
                 const { strength, text } = authManager.checkPasswordStrength(password);
-                
-                // 更新强度指示器
-                passwordStrengthBar.className = 'strength-bar';
-                passwordStrengthBar.classList.add(`strength-${strength}`);
+                if (passwordStrengthBar) {
+                    passwordStrengthBar.className = 'strength-bar';
+                    passwordStrengthBar.classList.add(`strength-${strength}`);
+                }
                 passwordStrengthText.textContent = `密码强度: ${text}`;
             });
-            
-            // 邮箱格式验证函数
-            function isValidEmail(email) {
-                if (!email) return true; // 允许为空
-                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-                return emailRegex.test(email);
-            }
             
             // 表单提交事件
             registerForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const username = registerUsername.value.trim();
-                const email = registerEmail.value.trim();
                 const password = registerPassword.value;
                 const confirmPassword = registerConfirmPassword.value;
                 // 重置所有错误信息
                 authManager.showError('registerUsernameError', '');
-                authManager.showError('registerEmailError', '');
                 authManager.showError('registerPasswordError', '');
                 authManager.showError('registerConfirmPasswordError', '');
                 authManager.showError('registerError', '');
@@ -341,15 +327,6 @@
                     hasError = true;
                 } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
                     authManager.showError('registerUsernameError', '用户名只能包含字母、数字和下划线');
-                    hasError = true;
-                }
-                // 邮箱验证
-                let finalEmail = email;
-                if (!finalEmail) {
-                    finalEmail = `${username}@email.com`;
-                }
-                if (finalEmail && !isValidEmail(finalEmail)) {
-                    authManager.showError('registerEmailError', '邮箱格式不正确，请使用xxx@xxx.com格式');
                     hasError = true;
                 }
                 if (!password) {
@@ -378,7 +355,6 @@
                         body: JSON.stringify({
                             username: username,
                             password: password,
-                            email: finalEmail,
                             avatar: ''
                         })
                     });

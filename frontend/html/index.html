@@ -430,6 +430,23 @@
         </div>
     </div>
 
+    <!-- 通用确认提示模态框 -->
+    <div id="confirmModal" class="modal hidden">
+        <div class="modal-content confirm-modal-content">
+            <div class="modal-header">
+                <h3>提示</h3>
+                <button id="closeConfirmModal" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">确定要执行该操作吗？</p>
+            </div>
+            <div class="form-footer">
+                <button type="button" id="confirmCancelBtn" class="btn btn-cancel">取消</button>
+                <button type="button" id="confirmOkBtn" class="btn btn-submit">确定</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // API配置
         const API_CONFIG = {
@@ -1208,9 +1225,8 @@
                 }
                 
                 const actionText = status === 1 ? '完成' : '未完成';
-                if (!confirm(`确定要将选中的 ${this.selectedTodoIds.size} 个待办事项标记为${actionText}吗？`)) {
-                    return;
-                }
+                const confirmed = await this.showConfirm(`确定要将选中的 ${this.selectedTodoIds.size} 个待办事项标记为${actionText}吗？`);
+                if (!confirmed) return;
                 
                 try {
                     // 调用批量更新状态接口
@@ -1249,9 +1265,8 @@
                     return;
                 }
                 
-                if (!confirm(`确定要删除选中的 ${this.selectedTodoIds.size} 个待办事项吗？删除后可以在回收站中恢复。`)) {
-                    return;
-                }
+                const confirmed = await this.showConfirm(`确定要删除选中的 ${this.selectedTodoIds.size} 个待办事项吗？删除后将无法恢复，请谨慎操作。`);
+                if (!confirmed) return;
                 
                 try {
                     // 调用批量删除接口
@@ -1357,9 +1372,8 @@
                     return;
                 }
                 
-                if (!confirm(`确定要删除选中的 ${this.selectedBillIds.size} 个账单吗？删除后可以在回收站中恢复。`)) {
-                    return;
-                }
+                const confirmed = await this.showConfirm(`确定要删除选中的 ${this.selectedBillIds.size} 个账单吗？删除后将无法恢复，请谨慎操作。`);
+                if (!confirmed) return;
                 
                 try {
                     // 调用批量删除接口
@@ -2724,18 +2738,19 @@
             }
 
             // 退出登录
-            handleLogout() {
-                if (confirm('确定要退出登录吗？')) {
-                    // 清除所有登录信息
-                    localStorage.removeItem(API_CONFIG.TOKEN_KEY);
-                    localStorage.removeItem(API_CONFIG.USER_KEY);
-                    localStorage.removeItem('dailyMate_currentUser');
-                    this.showNotification('已退出登录');
-                    // 跳转到登录页
-                    setTimeout(() => {
-                        window.location.href = 'login.html';
-                    }, 1000);
-                }
+            async handleLogout() {
+                const confirmed = await this.showConfirm('确定要退出登录吗？');
+                if (!confirmed) return;
+
+                // 清除所有登录信息
+                localStorage.removeItem(API_CONFIG.TOKEN_KEY);
+                localStorage.removeItem(API_CONFIG.USER_KEY);
+                localStorage.removeItem('dailyMate_currentUser');
+                this.showNotification('已退出登录');
+                // 跳转到登录页
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1000);
             }
 
             // 工具方法
@@ -2767,6 +2782,57 @@
                         }
                     }, 300);
                 }, 3000);
+            }
+
+            // 美观的确认提示框（替代浏览器 confirm）
+            showConfirm(message) {
+                return new Promise((resolve) => {
+                    const modal = document.getElementById('confirmModal');
+                    const messageEl = document.getElementById('confirmMessage');
+                    const okBtn = document.getElementById('confirmOkBtn');
+                    const cancelBtn = document.getElementById('confirmCancelBtn');
+                    const closeBtn = document.getElementById('closeConfirmModal');
+
+                    // 如果模态框不存在，回退到原生 confirm
+                    if (!modal || !messageEl || !okBtn || !cancelBtn) {
+                        resolve(window.confirm(message));
+                        return;
+                    }
+
+                    messageEl.textContent = message;
+
+                    const cleanup = (result) => {
+                        modal.classList.remove('show');
+                        setTimeout(() => {
+                            modal.classList.add('hidden');
+                        }, 250);
+                        document.body.style.overflow = '';
+
+                        okBtn.removeEventListener('click', onOk);
+                        cancelBtn.removeEventListener('click', onCancel);
+                        if (closeBtn) closeBtn.removeEventListener('click', onCancel);
+                        modal.removeEventListener('click', onBackdrop);
+
+                        resolve(result);
+                    };
+
+                    const onOk = () => cleanup(true);
+                    const onCancel = () => cleanup(false);
+                    const onBackdrop = (e) => {
+                        if (e.target === modal) onCancel();
+                    };
+
+                    okBtn.addEventListener('click', onOk);
+                    cancelBtn.addEventListener('click', onCancel);
+                    if (closeBtn) closeBtn.addEventListener('click', onCancel);
+                    modal.addEventListener('click', onBackdrop);
+
+                    modal.classList.remove('hidden');
+                    setTimeout(() => {
+                        modal.classList.add('show');
+                    }, 10);
+                    document.body.style.overflow = 'hidden';
+                });
             }
         }
 
