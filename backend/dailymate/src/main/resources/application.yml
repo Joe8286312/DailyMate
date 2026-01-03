@@ -8,7 +8,8 @@ spring:
     # 添加 allowPublicKeyRetrieval=true 与 useSSL=false，保留 serverTimezone/characterEncoding
     url: jdbc:mysql://localhost:3306/dailymate?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8
     username: root
-    password: xiesuyang888
+#    password: xiesuyang888
+    password: xiang123
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
