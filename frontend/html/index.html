@@ -23,13 +23,10 @@
         <header class="dailymate-header">
             <div class="header-row header-row-top">
                 <div class="header-title">
-                    <img src="https://img.icons8.com/color/48/000000/task--v1.png" alt="Logo" class="logo-img">
+                    <img src="./image/Logo.png" alt="Logo" class="logo-img">
                     DailyMate
                 </div>
                 <div class="user-info">
-                    <div class="user-avatar-container">
-                        <img id="userAvatar" src="https://img.icons8.com/color/48/000000/user-male-circle--v2.png" alt="用户头像" class="avatar-img">
-                    </div>
                     <span id="usernameDisplay" class="user-name">用户名</span>
                     <button id="logoutBtn" class="logout-btn">退出登录</button>
                 </div>
@@ -104,29 +101,40 @@
                         </a>
                     </li>
                 </ul>
+
+                <!-- 待办事项批量操作按钮区域，放在侧边栏 -->
+                <div class="batch-actions-sidebar hidden" id="todoBatchActionsSidebar">
+                    <button id="batchCompleteBtn" class="btn batch-btn complete-btn">
+                        <i class="fas fa-check-circle"></i><span>批量完成</span>
+                    </button>
+                    <button id="batchIncompleteBtn" class="btn batch-btn incomplete-btn">
+                        <i class="fas fa-times-circle"></i><span>批量未完成</span>
+                    </button>
+                    <button id="batchDeleteBtn" class="btn batch-btn delete-btn">
+                        <i class="fas fa-trash-alt"></i><span>批量删除</span>
+                    </button>
+                    <button id="clearSelectionBtn" class="btn btn-cancel">
+                        <i class="fas fa-times"></i><span>取消选择</span>
+                    </button>
+                    <span class="selected-count" id="selectedCount">已选择 0 项</span>
+                </div>
+
+                <!-- 账单批量操作按钮区域，同样放在侧边栏 -->
+                <div class="batch-actions-sidebar hidden" id="billBatchActionsSidebar">
+                    <button id="batchDeleteBillBtn" class="btn batch-btn delete-btn">
+                        <i class="fas fa-trash-alt"></i><span>批量删除</span>
+                    </button>
+                    <button id="clearBillSelectionBtn" class="btn btn-cancel">
+                        <i class="fas fa-times"></i><span>取消选择</span>
+                    </button>
+                    <span class="selected-count" id="selectedBillCount">已选择 0 项</span>
+                </div>
             </nav>
 
             <!-- 主内容区域 -->
             <div class="main-content">
                 <!-- 待办事项管理内容 -->
                 <div id="todoContent" class="data-management">
-                    <!-- 左侧批量操作侧边栏 -->
-                    <div class="batch-actions-sidebar hidden" id="todoBatchActionsSidebar">
-                        <button id="batchCompleteBtn" class="btn batch-btn complete-btn">
-                            <i class="fas fa-check-circle"></i><span>批量完成</span>
-                        </button>
-                        <button id="batchIncompleteBtn" class="btn batch-btn incomplete-btn">
-                            <i class="fas fa-times-circle"></i><span>批量未完成</span>
-                        </button>
-                        <button id="batchDeleteBtn" class="btn batch-btn delete-btn">
-                            <i class="fas fa-trash-alt"></i><span>批量删除</span>
-                        </button>
-                        <button id="clearSelectionBtn" class="btn btn-cancel">
-                            <i class="fas fa-times"></i><span>取消选择</span>
-                        </button>
-                        <span class="selected-count" id="selectedCount">已选择 0 项</span>
-                    </div>
-
                     <!-- 右侧主内容区域 -->
                     <div class="data-management-content">
                         <div class="data-controls">
@@ -185,17 +193,6 @@
 
                 <!-- 账单管理内容 -->
                 <div id="billContent" class="data-management hidden">
-                    <!-- 左侧批量操作侧边栏 -->
-                    <div class="batch-actions-sidebar hidden" id="billBatchActionsSidebar">
-                        <button id="batchDeleteBillBtn" class="btn batch-btn delete-btn">
-                            <i class="fas fa-trash-alt"></i><span>批量删除</span>
-                        </button>
-                        <button id="clearBillSelectionBtn" class="btn btn-cancel">
-                            <i class="fas fa-times"></i><span>取消选择</span>
-                        </button>
-                        <span class="selected-count" id="selectedBillCount">已选择 0 项</span>
-                    </div>
-
                     <!-- 右侧主内容区域 -->
                     <div class="data-management-content">
                         <div class="data-controls">
@@ -388,19 +385,7 @@
                     <input type="email" id="profileEmail" class="form-input" placeholder="请输入邮箱">
                     <span class="error-message" id="emailError"></span>
                 </div>
-                <div class="form-group">
-                    <label for="profileAvatarFile">头像</label>
-                    <div class="avatar-upload">
-                        <div class="avatar-preview">
-                            <img id="profileAvatarPreview" src="https://img.icons8.com/color/48/000000/user-male-circle--v2.png" alt="头像预览">
-                        </div>
-                        <div class="avatar-actions" style="flex: 1;">
-                            <input type="file" id="profileAvatarFile" class="form-input" accept="image/*">
-                            <input type="hidden" id="profileAvatar" value="https://img.icons8.com/color/48/000000/user-male-circle--v2.png">
-                            <small class="avatar-hint">选择本地图片（JPG/PNG/GIF），建议小于2MB</small>
-                        </div>
-                    </div>
-                </div>
+                <!-- 已移除头像上传功能 -->
                 <div style="text-align: center; margin: 20px 0;">
                     <button type="button" id="changePasswordLink" class="btn btn-cancel" style="background: transparent; border: none; color: #4299e1; text-decoration: underline; font-size: 14px;">
                         <i class="fas fa-key"></i> 修改密码
@@ -529,13 +514,10 @@
             // 统一API请求方法
             async request(endpoint, options = {}) {
                 const url = `${this.baseURL}${endpoint}`;
-                const isFormData = options.body instanceof FormData;
                 const headers = {
+                    'Content-Type': 'application/json',
                     ...options.headers
                 };
-                if (!isFormData) {
-                    headers['Content-Type'] = 'application/json';
-                }
                 if (this.token) {
                     headers['Authorization'] = `Bearer ${this.token}`;
                 }
@@ -565,46 +547,6 @@
                     }
                 } catch (error) {
                     console.error('API请求失败:', error);
-                    throw error;
-                }
-            }
-
-            // 上传头像文件，后端需返回文件名或可访问的URL
-            async uploadAvatar(file) {
-                const formData = new FormData();
-                formData.append('file', file);
-
-                const headers = {};
-                if (this.token) {
-                    headers['Authorization'] = `Bearer ${this.token}`;
-                }
-
-                try {
-                    const response = await fetch(`${this.baseURL}/api/upload/avatar`, {
-                        method: 'POST',
-                        headers,
-                        body: formData
-                    });
-
-                    if (response.status === 401) {
-                        this.handleUnauthorized();
-                        throw new Error('登录已过期，请重新登录');
-                    }
-
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(errorData.msg || errorData.message || '头像上传失败');
-                    }
-
-                    const text = await response.text();
-                    if (!text) return {};
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        return { url: text };
-                    }
-                } catch (error) {
-                    console.error('上传头像失败:', error);
                     throw error;
                 }
             }
@@ -968,7 +910,6 @@
                     if (user) {
                         this.apiManager.setCurrentUser(user);
                         this.usernameDisplay.textContent = user.username;
-                        this.userAvatar.src = user.avatar || 'https://img.icons8.com/color/48/000000/user-male-circle--v2.png';
                     } else {
                         throw new Error('无法获取用户信息');
                     }
@@ -990,7 +931,6 @@
                 
                 // 主应用页面元素
                 this.usernameDisplay = document.getElementById('usernameDisplay');
-                this.userAvatar = document.getElementById('userAvatar');
                 this.logoutBtn = document.getElementById('logoutBtn');
                 
                 // 日历元素
@@ -1035,12 +975,9 @@
                 this.todoModal = document.getElementById('todoModal');
                 this.billModal = document.getElementById('billModal');
 
-                // 用户模态框元素
+                // 用户信息模态框元素
                 this.userProfileModal = document.getElementById('userProfileModal');
                 this.changePasswordModal = document.getElementById('changePasswordModal');
-                this.profileAvatarFileInput = document.getElementById('profileAvatarFile');
-                this.profileAvatarPreview = document.getElementById('profileAvatarPreview');
-                this.profileAvatarHiddenInput = document.getElementById('profileAvatar');
 
                  // 批量操作元素
                 this.selectAllTodosCheckbox = document.getElementById('selectAllTodos');
@@ -1146,17 +1083,13 @@
                     });
                 }
 
-                // 用户信息点击事件
-                this.userAvatar.addEventListener('click', () => this.showUserProfileModal());
+                // 用户信息点击事件（点击用户名打开资料编辑）
                 this.usernameDisplay.addEventListener('click', () => this.showUserProfileModal());
                 
                 // 用户信息模态框事件
                 document.getElementById('closeUserProfileModal').addEventListener('click', () => this.hideUserProfileModal());
                 document.getElementById('cancelProfileBtn').addEventListener('click', () => this.hideUserProfileModal());
                 document.getElementById('userProfileForm').addEventListener('submit', (e) => this.handleUserProfileSubmit(e));
-                if (this.profileAvatarFileInput) {
-                    this.profileAvatarFileInput.addEventListener('change', (e) => this.handleAvatarFileChange(e));
-                }
                 
                 // 修改密码模态框事件
                 document.getElementById('closePasswordModal').addEventListener('click', () => this.hideChangePasswordModal());
@@ -1784,6 +1717,14 @@
 
             // 菜单切换方法
             switchMenu(menuId) {
+                // 每次切换页面时，清空两个模块的批量选择状态
+                if (typeof this.clearSelection === 'function') {
+                    this.clearSelection();
+                }
+                if (typeof this.clearBillSelection === 'function') {
+                    this.clearBillSelection();
+                }
+
                 // 移除所有菜单项的active类
                 this.menuItems.forEach(item => {
                     item.classList.remove('active');
@@ -1940,7 +1881,7 @@
                         <td>${highlightedTitle}</td>
                         <td>${highlightedContent}</td>
                         <td><span class="priority-badge priority-${todo.priority}">${priorityText}</span></td>
-                        <td><span class="status-badge status-${todo.status}">${statusText}</span></td>
+                        <td><span class="status-badge status-${todo.status}" title="点击切换完成状态">${statusText}</span></td>
                         <td>${date}</td>
                         <td>${startTime}</td>
                         <td>${endTime}</td>
@@ -1961,6 +1902,15 @@
                     deleteBtn.addEventListener('click', (e) => {
                         this.deleteTodo(todo.id, e.target);
                     });
+
+                    // 为状态徽章添加点击事件，实现快捷切换完成/未完成
+                    const statusBadge = row.querySelector('.status-badge');
+                    if (statusBadge) {
+                        statusBadge.style.cursor = 'pointer';
+                        statusBadge.addEventListener('click', () => {
+                            this.toggleTodoStatus(todo);
+                        });
+                    }
                     
                     this.todoTableBody.appendChild(row);
                 });
@@ -2287,6 +2237,47 @@
                 this.showTodoModal(todoId);
             }
 
+            // 快捷切换待办事项完成/未完成状态
+            async toggleTodoStatus(todo) {
+                try {
+                    const newStatus = todo.status === 1 ? 0 : 1;
+
+                    // 构造更新数据，保持与表单更新时一致
+                    const todoUpdateData = {
+                        id: todo.id,
+                        userId: todo.userId,
+                        title: todo.title,
+                        content: todo.content,
+                        priority: todo.priority,
+                        status: newStatus,
+                        date: todo.date,
+                        startTime: todo.startTime,
+                        endTime: todo.endTime
+                    };
+
+                    await this.apiManager.updateTodo(todo.id, todoUpdateData);
+
+                    this.showNotification(newStatus === 1 ? '已标记为已完成' : '已标记为未完成');
+
+                    // 重新加载表格和统计信息
+                    await this.renderTodoTable();
+                    await this.updateStats();
+
+                    // 更新预览卡片
+                    const previewDateStr = document.getElementById('currentPreviewDate').value;
+                    if (previewDateStr) {
+                        const previewDate = new Date(previewDateStr);
+                        await this.updateDatePreview(previewDate);
+                    }
+
+                    // 更新日历显示
+                    await this.renderCalendar();
+                } catch (error) {
+                    console.error('切换状态失败:', error);
+                    this.showNotification(error.message || '切换状态失败', 'error');
+                }
+            }
+
             async deleteTodo(todoId, btnElement) {
                 try {
                     // 如果已经在等待确认状态，执行删除
@@ -2549,60 +2540,10 @@
                 const user = this.apiManager.currentUser;
                 document.getElementById('profileUsername').value = user.username || '';
                 document.getElementById('profileEmail').value = user.email || '';
-                const defaultAvatar = 'https://img.icons8.com/color/48/000000/user-male-circle--v2.png';
-                const avatarValue = user.avatar || defaultAvatar;
-                if (this.profileAvatarHiddenInput) {
-                    this.profileAvatarHiddenInput.value = avatarValue;
-                }
-                if (this.profileAvatarFileInput) {
-                    this.profileAvatarFileInput.value = '';
-                }
-                if (this.profileAvatarPreview) {
-                    this.profileAvatarPreview.src = avatarValue;
-                }
                 
                 // 重置错误信息
                 document.getElementById('usernameError').textContent = '';
                 document.getElementById('emailError').textContent = '';
-            }
-
-            async handleAvatarFileChange(e) {
-                const file = e.target.files && e.target.files[0];
-                const defaultAvatar = 'https://img.icons8.com/color/48/000000/user-male-circle--v2.png';
-                const fallbackAvatar = this.apiManager.currentUser?.avatar || defaultAvatar;
-
-                if (!file) {
-                    if (this.profileAvatarHiddenInput) {
-                        this.profileAvatarHiddenInput.value = fallbackAvatar;
-                    }
-                    if (this.profileAvatarPreview) {
-                        this.profileAvatarPreview.src = fallbackAvatar;
-                    }
-                    return;
-                }
-
-                const maxSize = 2 * 1024 * 1024;
-                if (file.size > maxSize) {
-                    this.showNotification('请选择小于2MB的头像图片', 'error');
-                    e.target.value = '';
-                    return;
-                }
-
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const result = reader.result || '';
-                    if (this.profileAvatarHiddenInput) {
-                        this.profileAvatarHiddenInput.value = result;
-                    }
-                    if (this.profileAvatarPreview) {
-                        this.profileAvatarPreview.src = result;
-                    }
-                };
-                reader.onerror = () => {
-                    this.showNotification('读取头像文件失败，请重试', 'error');
-                    e.target.value = '';
-                };
-                reader.readAsDataURL(file);
             }
 
             // 处理用户信息提交
@@ -2611,8 +2552,6 @@
                 
                 const username = document.getElementById('profileUsername').value.trim();
                 const email = document.getElementById('profileEmail').value.trim();
-                const avatarInput = document.getElementById('profileAvatar');
-                const avatar = avatarInput ? avatarInput.value.trim() : '';
                 
                 // 验证输入
                 let hasError = false;
@@ -2633,8 +2572,7 @@
                     // 调用更新用户信息接口
                     const userData = {
                         username: username,
-                        email: email || '',
-                        avatar: avatar || ''
+                        email: email || ''
                     };
                     
                     const response = await this.apiManager.request('/api/user/profile', {
@@ -2649,14 +2587,8 @@
                             ...userData
                         };
                         
-                        // 更新页面显示
+                        // 更新页面显示（仅用户名）
                         this.usernameDisplay.textContent = username;
-                        if (avatar) {
-                            this.userAvatar.src = avatar;
-                            if (this.profileAvatarPreview) {
-                                this.profileAvatarPreview.src = avatar;
-                            }
-                        }
                         
                         // 更新localStorage中的用户信息
                         const userStr = localStorage.getItem('dailyMate_user');
