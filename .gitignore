@@ -1,0 +1,54 @@
+# 个人临时文件
+tmp/
+
+# 前端忽略文件
+node_modules/
+dist/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+.env.local
+.env.*.local
+*.swp
+*.swo
+
+# 后端忽略文件
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+rebel.xml
+
+# IDE文件
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+*.launch
+*.iws
+
+# 日志文件
+logs/
+*.log
+log/
+tmp/
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 系统文件
+Thumbs.db
