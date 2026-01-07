@@ -2193,6 +2193,15 @@
                     this.showNotification('请选择计划截止时间', 'error');
                     return;
                 }
+                // 开始时间与结束时间校验：如果填写了开始时间，则结束时间必须晚于开始时间
+                if (startTime) {
+                    const start = new Date(startTime);
+                    const end = new Date(endTime);
+                    if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end <= start) {
+                        this.showNotification('计划截止时间必须晚于开始时间', 'error');
+                        return;
+                    }
+                }
                 try {
                     const todoData = [title, content, priority, status, startTime, endTime];
                     if (id) {
