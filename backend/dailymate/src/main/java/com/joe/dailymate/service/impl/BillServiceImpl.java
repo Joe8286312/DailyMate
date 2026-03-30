@@ -4,6 +4,8 @@ import com.joe.dailymate.entity.Bill;
 import com.joe.dailymate.repository.BillRepository;
 import com.joe.dailymate.service.BillService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,6 +59,11 @@ public class BillServiceImpl implements BillService {
     @Override
     public List<Bill> getBillListByUser(Long userId) {
         return billRepository.findByUserIdAndIsDelete(userId, 0);
+    }
+
+    @Override
+    public Page<Bill> getBillListByUser(Long userId, Pageable pageable) {
+        return billRepository.findByUserIdAndIsDelete(userId, 0, pageable);
     }
 
     // ========= 新增功能实现 ==========

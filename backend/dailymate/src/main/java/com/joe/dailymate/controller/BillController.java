@@ -5,6 +5,9 @@ import com.joe.dailymate.service.BillService;
 import com.joe.dailymate.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import java.util.Date;
@@ -18,15 +21,21 @@ public class BillController {
     private BillService billService;
 
     @GetMapping("/list")
-    public List<Bill> getBillList(HttpServletRequest request,
-                                  @RequestParam(required = false)
-                                  @DateTimeFormat(pattern = "yyyy-MM-dd") Date date) {
+    public Object getBillList(HttpServletRequest request,
+                              @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date date,
+                              @RequestParam(required = false) Integer page,
+                              @RequestParam(required = false, defaultValue = "10") Integer size) {
         Long userId = JwtUtil.getUserIdFromRequest(request);
+        // 按日期精确查询时不分页（当天账单条数有限）
         if (date != null) {
             return billService.getBillListByUserAndDate(userId, date);
-        } else {
-            return billService.getBillListByUser(userId);
         }
+        // 有 page 参数时返回分页结果，否则返回全量（兼容旧调用）
+        if (page != null) {
+            PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "date", "id"));
+            return billService.getBillListByUser(userId, pageable);
+        }
+        return billService.getBillListByUser(userId);
     }
 
     @GetMapping("/{id}")

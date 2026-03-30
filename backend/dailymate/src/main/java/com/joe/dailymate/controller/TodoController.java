@@ -5,6 +5,8 @@ import com.joe.dailymate.service.TodoService;
 import com.joe.dailymate.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import java.util.Date;
@@ -18,15 +20,19 @@ public class TodoController {
     private TodoService todoService;
 
     @GetMapping("/list")
-    public List<Todo> getTodoList(HttpServletRequest request,
-                                  @RequestParam(required = false)
-                                  @DateTimeFormat(pattern = "yyyy-MM-dd") Date date) {
+    public Object getTodoList(HttpServletRequest request,
+                              @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date date,
+                              @RequestParam(required = false) Integer page,
+                              @RequestParam(required = false, defaultValue = "10") Integer size) {
         Long userId = JwtUtil.getUserIdFromRequest(request);
         if (date != null) {
             return todoService.getTodoListByUserAndDate(userId, date);
-        } else {
-            return todoService.getTodoListByUser(userId);
         }
+        if (page != null) {
+            PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "date", "id"));
+            return todoService.getTodoListByUser(userId, pageable);
+        }
+        return todoService.getTodoListByUser(userId);
     }
 
     @GetMapping("/{id}")
