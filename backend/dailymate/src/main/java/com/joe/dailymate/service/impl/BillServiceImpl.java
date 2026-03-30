@@ -6,6 +6,7 @@ import com.joe.dailymate.service.BillService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
@@ -125,18 +126,34 @@ public class BillServiceImpl implements BillService {
 
     /**
      * N天趋势，返回每日 income expense total
+     * 优化：改为1次SQL查询整个日期范围，再在内存中按日期分组，避免N次查询
      */
     @Override
     public List<Map<String, Object>> statTrend(Long userId, Integer days) {
         LocalDate today = LocalDate.now();
+        LocalDate startDay = today.minusDays(days - 1);
+
+        // 第一步：1次SQL查询，拿回整个日期范围内所有账单
+        Date from = Date.from(startDay.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        Date to = Date.from(today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        List<Bill> allBills = getBillListByUserAndDateRange(userId, from, to);
+
+        // 第二步：按日期字符串分组，Map<"2026-03-30", List<Bill>>
+        Map<String, List<Bill>> byDate = allBills.stream()
+                .collect(Collectors.groupingBy(b ->
+                        Instant.ofEpochMilli(b.getDate().getTime())
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate()
+                                .toString()
+                ));
+
+        // 第三步：按顺序遍历每一天，直接从Map取，不再查数据库
         List<Map<String, Object>> res = new ArrayList<>();
         for (int i = days - 1; i >= 0; i--) {
             LocalDate day = today.minusDays(i);
-            Date from = Date.from(day.atStartOfDay(ZoneId.systemDefault()).toInstant());
-            Date to = Date.from(day.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
-            List<Bill> list = getBillListByUserAndDateRange(userId, from, to);
-            double income = list.stream().filter(b -> b.getType() == 1).mapToDouble(Bill::getAmount).sum();
-            double expense = list.stream().filter(b -> b.getType() == 2).mapToDouble(Bill::getAmount).sum();
+            List<Bill> dayBills = byDate.getOrDefault(day.toString(), Collections.emptyList());
+            double income = dayBills.stream().filter(b -> b.getType() == 1).mapToDouble(Bill::getAmount).sum();
+            double expense = dayBills.stream().filter(b -> b.getType() == 2).mapToDouble(Bill::getAmount).sum();
             Map<String, Object> dayStat = new HashMap<>();
             dayStat.put("date", day.toString());
             dayStat.put("income", income);

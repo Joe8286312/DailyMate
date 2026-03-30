@@ -6,7 +6,6 @@ import com.joe.dailymate.entity.User;
 import com.joe.dailymate.service.UserService;
 import com.joe.dailymate.util.JwtUtil;
 import com.joe.dailymate.util.PasswordUtil;
-import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -112,12 +111,9 @@ public class UserController {
 
     // ========================== 辅助方法：从token获取userid ==========================
     /**
-     * 从请求头的token获取当用户的用户ID
+     * 已迁移到 JwtUtil.getUserIdFromRequest()，此处保留调用入口
      */
     private Long getUserIdFromRequest(HttpServletRequest request) {
-        String token = request.getHeader("Authorization");
-        if (token == null || !token.startsWith("Bearer ")) throw new RuntimeException("未登录");
-        Claims claims = JwtUtil.parseToken(token.substring(7));
-        return Long.valueOf(claims.getSubject());
+        return JwtUtil.getUserIdFromRequest(request);
     }
 }
