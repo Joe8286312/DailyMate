@@ -5,6 +5,7 @@ import com.joe.dailymate.repository.BillRepository;
 import com.joe.dailymate.service.BillService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -165,6 +166,7 @@ public class BillServiceImpl implements BillService {
     }
 
     // 批量软删除
+    @Transactional
     @Override
     public void batchDelete(List<Long> ids) {
         List<Bill> list = billRepository.findAllById(ids);
@@ -183,6 +185,7 @@ public class BillServiceImpl implements BillService {
     }
 
     // 批量彻底删除
+    @Transactional
     @Override
     public void batchHardDelete(List<Long> ids) {
         billRepository.deleteAllById(ids);
