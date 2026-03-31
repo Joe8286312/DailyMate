@@ -1,12 +1,17 @@
 package com.joe.dailymate.service;
 
 import com.joe.dailymate.entity.Todo;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.Date;
 import java.util.List;
 
 public interface TodoService {
     List<Todo> getTodoListByUserAndDate(Long userId, Date date);
     List<Todo> getTodoListByUser(Long userId);
+
+    // 分页查询全部待办
+    Page<Todo> getTodoListByUser(Long userId, Pageable pageable);
     Todo addTodo(Todo todo);
     void deleteTodo(Long id);
     Todo updateTodo(Todo todo);

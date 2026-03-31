@@ -1,8 +1,14 @@
 package com.joe.dailymate.controller;
 
 import com.joe.dailymate.entity.Bill;
+import com.joe.dailymate.exception.BusinessException;
 import com.joe.dailymate.service.BillService;
+import com.joe.dailymate.util.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import java.util.Date;
@@ -16,153 +22,167 @@ public class BillController {
     private BillService billService;
 
     @GetMapping("/list")
-    public List<Bill> getBillList(@RequestParam Long userId,
-                                  @RequestParam(required = false)
-                                  @DateTimeFormat(pattern = "yyyy-MM-dd") Date date) {
+    public Object getBillList(HttpServletRequest request,
+                              @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date date,
+                              @RequestParam(required = false) Integer page,
+                              @RequestParam(required = false, defaultValue = "10") Integer size) {
+        Long userId = JwtUtil.getUserIdFromRequest(request);
+        // 按日期精确查询时不分页（当天账单条数有限）
         if (date != null) {
             return billService.getBillListByUserAndDate(userId, date);
-        } else {
-            return billService.getBillListByUser(userId);
         }
+        // 有 page 参数时返回分页结果，否则返回全量（兼容旧调用）
+        if (page != null) {
+            PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "date", "id"));
+            return billService.getBillListByUser(userId, pageable);
+        }
+        return billService.getBillListByUser(userId);
     }
 
     @GetMapping("/{id}")
-    public Bill findById(@PathVariable Long id) {
-        return billService.findById(id);
+    public Bill findById(@PathVariable Long id, HttpServletRequest request) {
+        Long currentUserId = JwtUtil.getUserIdFromRequest(request);
+        Bill bill = billService.findById(id);
+        if (bill == null) throw BusinessException.notFound("账单不存在");
+        if (!bill.getUserId().equals(currentUserId)) throw BusinessException.forbidden("无权访问该账单");
+        return bill;
     }
 
     @PostMapping("/add")
-    public Bill addBill(@RequestBody Bill bill) {
+    public Bill addBill(@RequestBody Bill bill, HttpServletRequest request) {
+        // 强制用 token 里的 userId，忽略客户端传来的值
+        bill.setUserId(JwtUtil.getUserIdFromRequest(request));
         return billService.addBill(bill);
     }
 
     @DeleteMapping("/delete/{id}")
-    public void deleteBill(@PathVariable Long id) {
+    public void deleteBill(@PathVariable Long id, HttpServletRequest request) {
+        Long currentUserId = JwtUtil.getUserIdFromRequest(request);
+        Bill bill = billService.findById(id);
+        if (bill == null) throw BusinessException.notFound("账单不存在");
+        if (!bill.getUserId().equals(currentUserId)) throw BusinessException.forbidden("无权删除该账单");
         billService.deleteBill(id);
     }
 
     @PutMapping("/update")
-    public Bill updateBill(@RequestBody Bill bill) {
+    public Bill updateBill(@RequestBody Bill bill, HttpServletRequest request) {
+        Long currentUserId = JwtUtil.getUserIdFromRequest(request);
+        Bill existing = billService.findById(bill.getId());
+        if (existing == null) throw BusinessException.notFound("账单不存在");
+        if (!existing.getUserId().equals(currentUserId)) throw BusinessException.forbidden("无权修改该账单");
+        bill.setUserId(currentUserId);
         return billService.updateBill(bill);
     }
 
     // ===== 新增业务接口 =====
 
-    /**
-     * 按日期范围过滤
-     */
     @GetMapping("/range")
-    public List<Bill> getBillsInRange(@RequestParam Long userId,
+    public List<Bill> getBillsInRange(HttpServletRequest request,
                                       @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date start,
                                       @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date end) {
+        Long userId = JwtUtil.getUserIdFromRequest(request);
         return billService.getBillListByUserAndDateRange(userId, start, end);
     }
 
-    /**
-     * 按类型过滤
-     */
     @GetMapping("/by-type")
-    public List<Bill> getBillsByType(@RequestParam Long userId,
+    public List<Bill> getBillsByType(HttpServletRequest request,
                                      @RequestParam Integer type,
                                      @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date start,
                                      @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date end) {
+        Long userId = JwtUtil.getUserIdFromRequest(request);
         return billService.getBillListByUserAndType(userId, type, start, end);
     }
 
-    /**
-     * 按分类过滤
-     */
     @GetMapping("/by-category")
-    public List<Bill> getBillsByCategory(@RequestParam Long userId,
+    public List<Bill> getBillsByCategory(HttpServletRequest request,
                                          @RequestParam String category,
                                          @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date start,
                                          @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date end) {
+        Long userId = JwtUtil.getUserIdFromRequest(request);
         return billService.getBillListByUserAndCategory(userId, category, start, end);
     }
 
-    /**
-     * 按金额区间过滤
-     */
     @GetMapping("/by-amount-range")
-    public List<Bill> getBillsByAmountRange(@RequestParam Long userId,
+    public List<Bill> getBillsByAmountRange(HttpServletRequest request,
                                             @RequestParam Double min,
                                             @RequestParam Double max,
                                             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date start,
                                             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date end) {
+        Long userId = JwtUtil.getUserIdFromRequest(request);
         return billService.getBillListByUserAndAmountBetween(userId, min, max, start, end);
     }
 
-    /**
-     * 备注关键字模糊查询
-     */
     @GetMapping("/search")
-    public List<Bill> searchBill(@RequestParam Long userId, @RequestParam String keyword) {
+    public List<Bill> searchBill(HttpServletRequest request, @RequestParam String keyword) {
+        Long userId = JwtUtil.getUserIdFromRequest(request);
         return billService.searchBill(userId, keyword);
     }
 
-    /**
-     * 月度收支统计
-     */
     @GetMapping("/stat/month")
-    public Map<String, Double> statMonth(@RequestParam Long userId,
+    public Map<String, Double> statMonth(HttpServletRequest request,
                                          @RequestParam Integer year,
                                          @RequestParam Integer month) {
+        Long userId = JwtUtil.getUserIdFromRequest(request);
         return billService.statMonth(userId, year, month);
     }
 
-    /**
-     * 分类统计（如 pie 图）
-     */
     @GetMapping("/stat/category")
-    public Map<String, Double> statCategory(@RequestParam Long userId,
+    public Map<String, Double> statCategory(HttpServletRequest request,
                                             @RequestParam Integer type,
                                             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date start,
                                             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date end) {
+        Long userId = JwtUtil.getUserIdFromRequest(request);
         return billService.statCategory(userId, type, start, end);
     }
 
-    /**
-     * 近N天收支趋势
-     */
     @GetMapping("/stat/trend")
-    public List<Map<String, Object>> statTrend(@RequestParam Long userId, @RequestParam Integer days) {
+    public List<Map<String, Object>> statTrend(HttpServletRequest request, @RequestParam Integer days) {
+        Long userId = JwtUtil.getUserIdFromRequest(request);
         return billService.statTrend(userId, days);
     }
 
-    /**
-     * 批量软删除
-     */
     @PutMapping("/batch/delete")
-    public String batchDelete(@RequestBody Map<String, Object> req) {
+    public String batchDelete(@RequestBody Map<String, Object> req, HttpServletRequest request) {
+        Long currentUserId = JwtUtil.getUserIdFromRequest(request);
         List<Integer> ids = (List<Integer>) req.get("ids");
-        billService.batchDelete(ids.stream().map(Long::valueOf).toList());
+        List<Long> ownedIds = ids.stream()
+                .map(Long::valueOf)
+                .filter(id -> {
+                    Bill bill = billService.findById(id);
+                    return bill != null && bill.getUserId().equals(currentUserId);
+                })
+                .toList();
+        billService.batchDelete(ownedIds);
         return "OK";
     }
 
-    /**
-     * 批量彻底物理删除
-     */
     @PutMapping("/batch/hard-delete")
-    public String batchHardDelete(@RequestBody Map<String, Object> req) {
+    public String batchHardDelete(@RequestBody Map<String, Object> req, HttpServletRequest request) {
+        Long currentUserId = JwtUtil.getUserIdFromRequest(request);
         List<Integer> ids = (List<Integer>) req.get("ids");
-        billService.batchHardDelete(ids.stream().map(Long::valueOf).toList());
+        List<Long> ownedIds = ids.stream()
+                .map(Long::valueOf)
+                .filter(id -> {
+                    Bill bill = billService.findById(id);
+                    return bill != null && bill.getUserId().equals(currentUserId);
+                })
+                .toList();
+        billService.batchHardDelete(ownedIds);
         return "OK";
     }
 
-    /**
-     * 恢复软删除
-     */
     @PutMapping("/restore/{id}")
     public String restore(@PathVariable Long id) {
         billService.restore(id);
         return "OK";
     }
 
-    /**
-     * 彻底物理删除
-     */
     @DeleteMapping("/hard-delete/{id}")
-    public String hardDelete(@PathVariable Long id) {
+    public String hardDelete(@PathVariable Long id, HttpServletRequest request) {
+        Long currentUserId = JwtUtil.getUserIdFromRequest(request);
+        Bill bill = billService.findById(id);
+        if (bill == null) throw BusinessException.notFound("账单不存在");
+        if (!bill.getUserId().equals(currentUserId)) throw BusinessException.forbidden("无权删除该账单");
         billService.hardDelete(id);
         return "OK";
     }

@@ -63,3 +63,24 @@ ALTER TABLE todo
     ADD COLUMN start_time DATETIME DEFAULT NULL,
   ADD COLUMN end_time DATETIME DEFAULT NULL,
   ADD COLUMN finish_time DATETIME DEFAULT NULL;
+
+-- ===================== 复合索引 =====================
+-- 原有的单列 idx_userid 只覆盖 user_id，后续的 is_delete/date/status 过滤都要回表扫描。
+-- 将高频查询条件组合成复合索引，让 MySQL 在索引层就完成过滤，减少回表次数。
+--
+-- 索引列顺序原则：等值列在前，范围列在后（B-Tree 遇到范围条件右侧的列失效）
+--   user_id  = 等值（每个接口必带）
+--   is_delete= 等值（固定过滤 is_delete=0）
+--   date     = 范围（BETWEEN / =）
+--   status   = 等值（todo 状态筛选，首页最常用）
+
+-- bill 表：覆盖所有按日期筛选、统计的查询
+ALTER TABLE bill
+    DROP INDEX idx_userid,
+    ADD INDEX idx_bill_user_delete_date (user_id, is_delete, date);
+
+-- todo 表：两个复合索引分别覆盖日期查询和状态查询
+ALTER TABLE todo
+    DROP INDEX idx_userid,
+    ADD INDEX idx_todo_user_delete_date   (user_id, is_delete, date),
+    ADD INDEX idx_todo_user_delete_status (user_id, is_delete, status);

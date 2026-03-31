@@ -1,7 +1,9 @@
 // JwtUtil.java
 package com.joe.dailymate.util;
 
+import com.joe.dailymate.exception.BusinessException;
 import io.jsonwebtoken.*;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Date;
 
 public class JwtUtil {
@@ -23,5 +25,24 @@ public class JwtUtil {
                 .setSigningKey(SECRET)
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    /**
+     * 从请求头的 Authorization: Bearer <token> 中提取当前用户 ID
+     * 集中到这里，避免每个 Controller 重复实现
+     */
+    public static Long getUserIdFromRequest(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header == null || !header.startsWith("Bearer ")) {
+            throw BusinessException.unauthorized("未登录或 token 缺失");
+        }
+        try {
+            Claims claims = parseToken(header.substring(7));
+            return Long.valueOf(claims.getSubject());
+        } catch (ExpiredJwtException e) {
+            throw BusinessException.unauthorized("token 已过期，请重新登录");
+        } catch (JwtException e) {
+            throw BusinessException.unauthorized("token 无效");
+        }
     }
 }

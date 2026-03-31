@@ -4,8 +4,14 @@ import com.joe.dailymate.entity.Bill;
 import com.joe.dailymate.repository.BillRepository;
 import com.joe.dailymate.service.BillService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
@@ -16,18 +22,21 @@ public class BillServiceImpl implements BillService {
     @Autowired
     private BillRepository billRepository;
 
+    @CacheEvict(value = "bill_stat_month", allEntries = true)
     @Override
     public Bill addBill(Bill bill) {
         bill.setIsDelete(0);
         return billRepository.save(bill);
     }
 
+    @CacheEvict(value = "bill_stat_month", allEntries = true)
     @Override
     public Bill updateBill(Bill bill) {
         return billRepository.save(bill);
     }
 
     // 软删除替换硬删除
+    @CacheEvict(value = "bill_stat_month", allEntries = true)
     @Override
     public void deleteBill(Long id) {
         Bill bill = billRepository.findById(id).orElse(null);
@@ -55,6 +64,11 @@ public class BillServiceImpl implements BillService {
     @Override
     public List<Bill> getBillListByUser(Long userId) {
         return billRepository.findByUserIdAndIsDelete(userId, 0);
+    }
+
+    @Override
+    public Page<Bill> getBillListByUser(Long userId, Pageable pageable) {
+        return billRepository.findByUserIdAndIsDelete(userId, 0, pageable);
     }
 
     // ========= 新增功能实现 ==========
@@ -94,6 +108,7 @@ public class BillServiceImpl implements BillService {
      * 月收支统计
      * @return Map key: income, expense, total
      */
+    @Cacheable(value = "bill_stat_month", key = "#userId + '_' + #year + '_' + #month")
     @Override
     public Map<String, Double> statMonth(Long userId, Integer year, Integer month) {
         LocalDate first = LocalDate.of(year, month, 1);
@@ -125,18 +140,34 @@ public class BillServiceImpl implements BillService {
 
     /**
      * N天趋势，返回每日 income expense total
+     * 优化：改为1次SQL查询整个日期范围，再在内存中按日期分组，避免N次查询
      */
     @Override
     public List<Map<String, Object>> statTrend(Long userId, Integer days) {
         LocalDate today = LocalDate.now();
+        LocalDate startDay = today.minusDays(days - 1);
+
+        // 第一步：1次SQL查询，拿回整个日期范围内所有账单
+        Date from = Date.from(startDay.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        Date to = Date.from(today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+        List<Bill> allBills = getBillListByUserAndDateRange(userId, from, to);
+
+        // 第二步：按日期字符串分组，Map<"2026-03-30", List<Bill>>
+        Map<String, List<Bill>> byDate = allBills.stream()
+                .collect(Collectors.groupingBy(b ->
+                        Instant.ofEpochMilli(b.getDate().getTime())
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate()
+                                .toString()
+                ));
+
+        // 第三步：按顺序遍历每一天，直接从Map取，不再查数据库
         List<Map<String, Object>> res = new ArrayList<>();
         for (int i = days - 1; i >= 0; i--) {
             LocalDate day = today.minusDays(i);
-            Date from = Date.from(day.atStartOfDay(ZoneId.systemDefault()).toInstant());
-            Date to = Date.from(day.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
-            List<Bill> list = getBillListByUserAndDateRange(userId, from, to);
-            double income = list.stream().filter(b -> b.getType() == 1).mapToDouble(Bill::getAmount).sum();
-            double expense = list.stream().filter(b -> b.getType() == 2).mapToDouble(Bill::getAmount).sum();
+            List<Bill> dayBills = byDate.getOrDefault(day.toString(), Collections.emptyList());
+            double income = dayBills.stream().filter(b -> b.getType() == 1).mapToDouble(Bill::getAmount).sum();
+            double expense = dayBills.stream().filter(b -> b.getType() == 2).mapToDouble(Bill::getAmount).sum();
             Map<String, Object> dayStat = new HashMap<>();
             dayStat.put("date", day.toString());
             dayStat.put("income", income);
@@ -148,6 +179,8 @@ public class BillServiceImpl implements BillService {
     }
 
     // 批量软删除
+    @CacheEvict(value = "bill_stat_month", allEntries = true)
+    @Transactional
     @Override
     public void batchDelete(List<Long> ids) {
         List<Bill> list = billRepository.findAllById(ids);
@@ -166,6 +199,7 @@ public class BillServiceImpl implements BillService {
     }
 
     // 批量彻底删除
+    @Transactional
     @Override
     public void batchHardDelete(List<Long> ids) {
         billRepository.deleteAllById(ids);

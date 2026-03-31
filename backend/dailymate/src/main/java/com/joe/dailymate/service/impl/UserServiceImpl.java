@@ -4,6 +4,8 @@ import com.joe.dailymate.entity.User;
 import com.joe.dailymate.repository.UserRepository;
 import com.joe.dailymate.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
@@ -22,6 +24,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByUsernameAndIsDelete(username, 0);
     }
 
+    @CacheEvict(value = "user", key = "#user.id")
     @Override
     public User saveUser(User user) {
         return userRepository.save(user);
@@ -33,6 +36,7 @@ public class UserServiceImpl implements UserService {
         return userRepository.findByIsDelete(0);
     }
 
+    @Cacheable(value = "user", key = "#id")
     @Override
     public User findById(Long id) {
         User user = userRepository.findById(id).orElse(null);
@@ -44,6 +48,7 @@ public class UserServiceImpl implements UserService {
     }
 
     // 软删除替换硬删除
+    @CacheEvict(value = "user", key = "#id")
     @Override
     public void deleteById(Long id) {
         User user = userRepository.findById(id).orElse(null);

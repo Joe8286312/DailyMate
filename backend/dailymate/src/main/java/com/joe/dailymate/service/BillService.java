@@ -1,6 +1,8 @@
 package com.joe.dailymate.service;
 
 import com.joe.dailymate.entity.Bill;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +14,9 @@ public interface BillService {
     Bill findById(Long id);
     List<Bill> getBillListByUserAndDate(Long userId, Date date);
     List<Bill> getBillListByUser(Long userId);
+
+    // 分页查询全部账单
+    Page<Bill> getBillListByUser(Long userId, Pageable pageable);
 
     // 新增：日期范围筛选
     List<Bill> getBillListByUserAndDateRange(Long userId, Date start, Date end);
