@@ -12,6 +12,7 @@ spring:
 #    password: xiesuyang888
 
     password: xiang123
+
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -54,9 +55,11 @@ jakarta:
       url: jdbc:mysql://localhost:3306/dailymate?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=utf8
       driver: com.mysql.cj.jdbc.Driver
       user: root
+
       password: xiang123
 
 #      password: xiesuyang888
+
 
 
 server:

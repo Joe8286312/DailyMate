@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyMate - 注册</title>
+    <!-- Element UI CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-left">
+            <h1><i class="fas fa-rainbow"></i> DailyMate</h1>
+            <p>您的个人日常管理助手，轻松管理待办事项和账单，让生活更有条理</p>
+            <div class="features">
+                <div class="feature-item">
+                    <i class="fas fa-tasks"></i>
+                    <h4>待办管理</h4>
+                    <p>智能分类，优先级管理</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <h4>记账功能</h4>
+                    <p>收支明细，财务分析</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <h4>日历视图</h4>
+                    <p>直观查看日程安排</p>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-chart-line"></i>
+                    <h4>数据统计</h4>
+                    <p>智能分析，趋势预测</p>
+                </div>
+            </div>
+        </div>
+        <div class="auth-right">
+            <div class="auth-header">
+                <h2>创建新账户</h2>
+                <p>加入DailyMate，开始管理您的日常生活</p>
+            </div>
+            
+            <!-- 注册表单 -->
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="registerUsername">用户名 *</label>
+                    <input type="text" id="registerUsername" class="form-input" placeholder="请输入用户名" required>
+                    <span class="auth-error" id="registerUsernameError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">密码 *</label>
+                    <input type="password" id="registerPassword" class="form-input" placeholder="请输入密码" required>
+                    <div class="password-strength">
+                        <div class="strength-bar" id="passwordStrengthBar"></div>
+                    </div>
+                    <div class="strength-text" id="passwordStrengthText">密码强度: 弱</div>
+                    <small class="password-rules">
+                        密码规则：至少 6 位，包含数字、大写字母、小写字母、特殊字符中的任意一种；
+                        每多一种字符类型，密码强度会依次提升为弱、中等、强、很强。
+                    </small>
+                    <span class="auth-error" id="registerPasswordError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="registerConfirmPassword">确认密码 *</label>
+                    <input type="password" id="registerConfirmPassword" class="form-input" placeholder="请再次输入密码" required>
+                    <span class="auth-error" id="registerConfirmPasswordError"></span>
+                </div>
+                <button type="submit" class="auth-btn">注册</button>
+                <span class="auth-error" id="registerError"></span>
+                <span class="auth-success" id="registerSuccess"></span>
+                <div class="auth-links">
+                    <p>已经有账户？ <a href="login.html" class="auth-link">立即登录</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // API配置
+        const API_CONFIG = {
+            BASE_URL: 'http://localhost:8080',
+            TOKEN_KEY: 'dailyMate_token',
+            USER_KEY: 'dailyMate_user'
+        };
+
+        // 安全检查：如果已登录则跳转到主页面
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem(API_CONFIG.TOKEN_KEY);
+            const user = localStorage.getItem(API_CONFIG.USER_KEY);
+            
+            if (token && user) {
+                window.location.href = 'index.html';
+            }
+        });
+
+        // 用户数据模型
+        class User {
+            constructor(id, username, password, email = '', avatar = '', isDelete = 0) {
+                this.id = id;
+                this.username = username;
+                this.password = password;
+                this.email = email;
+                this.avatar = avatar || 'https://img.icons8.com/color/48/000000/user-male-circle--v2.png';
+                this.isDelete = isDelete;
+                this.createdAt = new Date().toISOString();
+                this.updatedAt = new Date().toISOString();
+            }
+        }
+
+        // 数据存储管理器
+        class AuthManager {
+            constructor() {
+                this.initStorage();
+                this.loadData();
+            }
+
+            initStorage() {
+                if (!localStorage.getItem('dailyMate_users')) {
+                    localStorage.setItem('dailyMate_users', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('dailyMate_currentUser')) {
+                    localStorage.setItem('dailyMate_currentUser', JSON.stringify(null));
+                }
+            }
+
+            loadData() {
+                this.users = JSON.parse(localStorage.getItem('dailyMate_users')) || [];
+                this.currentUser = JSON.parse(localStorage.getItem('dailyMate_currentUser'));
+                
+                // 检查是否已登录，如果是则跳转到主页面
+                if (this.currentUser) {
+                    window.location.href = 'index.html';
+                }
+            }
+
+            saveData() {
+                localStorage.setItem('dailyMate_users', JSON.stringify(this.users));
+                localStorage.setItem('dailyMate_currentUser', JSON.stringify(this.currentUser));
+            }
+
+            // 检查用户名是否已存在
+            isUsernameTaken(username) {
+                return this.users.some(user => 
+                    user.username === username && user.isDelete === 0
+                );
+            }
+
+            // 检查邮箱是否已存在
+            isEmailTaken(email) {
+                if (!email) return false;
+                return this.users.some(user => 
+                    user.email === email && user.isDelete === 0
+                );
+            }
+
+            // 注册新用户
+            registerUser(username, password, email = '') {
+                // 验证用户名
+                if (this.isUsernameTaken(username)) {
+                    return { success: false, message: '用户名已存在' };
+                }
+                
+                // 验证邮箱（如果提供了）
+                if (email && this.isEmailTaken(email)) {
+                    return { success: false, message: '邮箱已存在' };
+                }
+                
+                // 验证用户名长度
+                if (username.length < 3) {
+                    return { success: false, message: '用户名至少需要3个字符' };
+                }
+                
+                // 验证用户名格式（只允许字母、数字、下划线）
+                const usernameRegex = /^[a-zA-Z0-9_]+$/;
+                if (!usernameRegex.test(username)) {
+                    return { success: false, message: '用户名只能包含字母、数字和下划线' };
+                }
+                
+                // 验证密码强度
+                if (password.length < 6) {
+                    return { success: false, message: '密码至少需要6个字符' };
+                }
+                
+                // 创建新用户
+                const id = Date.now();
+                const newUser = new User(id, username, password, email);
+                this.users.push(newUser);
+                this.saveData();
+                
+                return { success: true, user: newUser };
+            }
+
+            // 显示通知
+            showNotification(message, type = 'success') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                
+                document.body.appendChild(notification);
+                
+                // 3秒后移除通知
+                setTimeout(() => {
+                    notification.style.animation = 'slideOut 0.3s ease-out';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            document.body.removeChild(notification);
+                        }
+                    }, 300);
+                }, 3000);
+            }
+
+            // 显示错误
+            showError(elementId, message) {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.textContent = message;
+                    element.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        element.style.display = 'none';
+                    }, 3000);
+                }
+            }
+
+            // 显示成功消息
+            showSuccess(elementId, message) {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.textContent = message;
+                    element.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        element.style.display = 'none';
+                    }, 3000);
+                }
+            }
+
+            // 检查密码强度
+            checkPasswordStrength(password) {
+                let strength = 0;
+
+                const hasDigit = /[0-9]/.test(password);
+                const hasLower = /[a-z]/.test(password);
+                const hasUpper = /[A-Z]/.test(password);
+                const hasSpecial = /[^A-Za-z0-9]/.test(password);
+
+                if (hasDigit) strength++;
+                if (hasLower) strength++;
+                if (hasUpper) strength++;
+                if (hasSpecial) strength++;
+
+                let text = '';
+                switch (strength) {
+                    case 0:
+                    case 1:
+                        text = '弱';
+                        break;
+                    case 2:
+                        text = '中等';
+                        break;
+                    case 3:
+                        text = '强';
+                        break;
+                    case 4:
+                        text = '很强';
+                        break;
+                }
+
+                return { strength, text };
+            }
+        }
+
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', () => {
+            const authManager = new AuthManager();
+            
+            // 获取表单元素
+            const registerForm = document.getElementById('registerForm');
+            const registerUsername = document.getElementById('registerUsername');
+            const registerPassword = document.getElementById('registerPassword');
+            const registerConfirmPassword = document.getElementById('registerConfirmPassword');
+            const passwordStrengthBar = document.getElementById('passwordStrengthBar');
+            const passwordStrengthText = document.getElementById('passwordStrengthText');
+            
+            // 密码强度实时检查
+            registerPassword.addEventListener('input', () => {
+                const password = registerPassword.value;
+                if (!password) {
+                    if (passwordStrengthBar) {
+                        passwordStrengthBar.className = 'strength-bar strength-0';
+                    }
+                    passwordStrengthText.textContent = '密码强度: 弱';
+                    return;
+                }
+
+                const { strength, text } = authManager.checkPasswordStrength(password);
+                if (passwordStrengthBar) {
+                    passwordStrengthBar.className = 'strength-bar';
+                    passwordStrengthBar.classList.add(`strength-${strength}`);
+                }
+                passwordStrengthText.textContent = `密码强度: ${text}`;
+            });
+            
+            // 表单提交事件
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = registerUsername.value.trim();
+                const password = registerPassword.value;
+                const confirmPassword = registerConfirmPassword.value;
+                // 重置所有错误信息
+                authManager.showError('registerUsernameError', '');
+                authManager.showError('registerPasswordError', '');
+                authManager.showError('registerConfirmPasswordError', '');
+                authManager.showError('registerError', '');
+                authManager.showSuccess('registerSuccess', '');
+                // 验证输入
+                let hasError = false;
+                if (!username) {
+                    authManager.showError('registerUsernameError', '请输入用户名');
+                    hasError = true;
+                } else if (username.length < 3) {
+                    authManager.showError('registerUsernameError', '用户名至少需要3个字符');
+                    hasError = true;
+                } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                    authManager.showError('registerUsernameError', '用户名只能包含字母、数字和下划线');
+                    hasError = true;
+                }
+                if (!password) {
+                    authManager.showError('registerPasswordError', '请输入密码');
+                    hasError = true;
+                } else if (password.length < 6) {
+                    authManager.showError('registerPasswordError', '密码至少需要6个字符');
+                    hasError = true;
+                }
+                if (!confirmPassword) {
+                    authManager.showError('registerConfirmPasswordError', '请确认密码');
+                    hasError = true;
+                }
+                if (password !== confirmPassword) {
+                    authManager.showError('registerConfirmPasswordError', '两次输入的密码不一致');
+                    hasError = true;
+                }
+                if (hasError) return;
+                try {
+                    // 调用后端注册接口，确保 email 绝不为空字符串
+                    const response = await fetch(`${API_CONFIG.BASE_URL}/api/auth/register`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: username,
+                            password: password,
+                            avatar: ''
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        // 注册成功后，清理所有登录状态
+                        localStorage.removeItem(API_CONFIG.TOKEN_KEY);
+                        localStorage.removeItem(API_CONFIG.USER_KEY);
+                        localStorage.removeItem('dailyMate_currentUser');
+                        authManager.showSuccess('registerSuccess', '注册成功！正在跳转到登录页面...');
+                        setTimeout(() => {
+                            window.location.href = 'login.html';
+                        }, 2000);
+                    } else {
+                        authManager.showError('registerError', data.msg || data.message || '注册失败');
+                    }
+                } catch (error) {
+                    console.error('注册失败:', error);
+                    authManager.showError('registerError', '注册失败，请检查网络连接或稍后重试');
+                }
+            });
+            
+            // 添加CSS动画样式
+            if (!document.getElementById('notification-styles')) {
+                const style = document.createElement('style');
+                style.id = 'notification-styles';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                        to {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    
+                    @keyframes slideOut {
+                        from {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                        to {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        });
+    </script>
+</body>
+</html>
