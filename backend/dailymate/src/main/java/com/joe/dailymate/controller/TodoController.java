@@ -1,6 +1,7 @@
 package com.joe.dailymate.controller;
 
 import com.joe.dailymate.entity.Todo;
+import com.joe.dailymate.exception.BusinessException;
 import com.joe.dailymate.service.TodoService;
 import com.joe.dailymate.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,7 +40,8 @@ public class TodoController {
     public Todo findById(@PathVariable Long id, HttpServletRequest request) {
         Long currentUserId = JwtUtil.getUserIdFromRequest(request);
         Todo todo = todoService.findById(id);
-        if (todo == null || !todo.getUserId().equals(currentUserId)) return null;
+        if (todo == null) throw BusinessException.notFound("待办不存在");
+        if (!todo.getUserId().equals(currentUserId)) throw BusinessException.forbidden("无权访问该待办");
         return todo;
     }
 
@@ -53,16 +55,17 @@ public class TodoController {
     public void deleteTodo(@PathVariable Long id, HttpServletRequest request) {
         Long currentUserId = JwtUtil.getUserIdFromRequest(request);
         Todo todo = todoService.findById(id);
-        if (todo != null && todo.getUserId().equals(currentUserId)) {
-            todoService.deleteTodo(id);
-        }
+        if (todo == null) throw BusinessException.notFound("待办不存在");
+        if (!todo.getUserId().equals(currentUserId)) throw BusinessException.forbidden("无权删除该待办");
+        todoService.deleteTodo(id);
     }
 
     @PutMapping("/update")
     public Todo updateTodo(@RequestBody Todo todo, HttpServletRequest request) {
         Long currentUserId = JwtUtil.getUserIdFromRequest(request);
         Todo existing = todoService.findById(todo.getId());
-        if (existing == null || !existing.getUserId().equals(currentUserId)) return null;
+        if (existing == null) throw BusinessException.notFound("待办不存在");
+        if (!existing.getUserId().equals(currentUserId)) throw BusinessException.forbidden("无权修改该待办");
         todo.setUserId(currentUserId);
         return todoService.updateTodo(todo);
     }

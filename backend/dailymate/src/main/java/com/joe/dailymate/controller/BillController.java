@@ -1,6 +1,7 @@
 package com.joe.dailymate.controller;
 
 import com.joe.dailymate.entity.Bill;
+import com.joe.dailymate.exception.BusinessException;
 import com.joe.dailymate.service.BillService;
 import com.joe.dailymate.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,8 +43,8 @@ public class BillController {
     public Bill findById(@PathVariable Long id, HttpServletRequest request) {
         Long currentUserId = JwtUtil.getUserIdFromRequest(request);
         Bill bill = billService.findById(id);
-        // 归属校验：不是自己的账单返回 null
-        if (bill == null || !bill.getUserId().equals(currentUserId)) return null;
+        if (bill == null) throw BusinessException.notFound("账单不存在");
+        if (!bill.getUserId().equals(currentUserId)) throw BusinessException.forbidden("无权访问该账单");
         return bill;
     }
 
@@ -58,18 +59,17 @@ public class BillController {
     public void deleteBill(@PathVariable Long id, HttpServletRequest request) {
         Long currentUserId = JwtUtil.getUserIdFromRequest(request);
         Bill bill = billService.findById(id);
-        if (bill != null && bill.getUserId().equals(currentUserId)) {
-            billService.deleteBill(id);
-        }
+        if (bill == null) throw BusinessException.notFound("账单不存在");
+        if (!bill.getUserId().equals(currentUserId)) throw BusinessException.forbidden("无权删除该账单");
+        billService.deleteBill(id);
     }
 
     @PutMapping("/update")
     public Bill updateBill(@RequestBody Bill bill, HttpServletRequest request) {
         Long currentUserId = JwtUtil.getUserIdFromRequest(request);
-        // 先查原始记录，确认归属
         Bill existing = billService.findById(bill.getId());
-        if (existing == null || !existing.getUserId().equals(currentUserId)) return null;
-        // 防止客户端篡改 userId
+        if (existing == null) throw BusinessException.notFound("账单不存在");
+        if (!existing.getUserId().equals(currentUserId)) throw BusinessException.forbidden("无权修改该账单");
         bill.setUserId(currentUserId);
         return billService.updateBill(bill);
     }
@@ -181,9 +181,9 @@ public class BillController {
     public String hardDelete(@PathVariable Long id, HttpServletRequest request) {
         Long currentUserId = JwtUtil.getUserIdFromRequest(request);
         Bill bill = billService.findById(id);
-        if (bill != null && bill.getUserId().equals(currentUserId)) {
-            billService.hardDelete(id);
-        }
+        if (bill == null) throw BusinessException.notFound("账单不存在");
+        if (!bill.getUserId().equals(currentUserId)) throw BusinessException.forbidden("无权删除该账单");
+        billService.hardDelete(id);
         return "OK";
     }
 }

@@ -34,6 +34,19 @@ spring:
   jackson:
     time-zone: Asia/Shanghai
 
+  # Redis 连接配置
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 3000ms
+
+  # Spring Cache 使用 Redis，默认 TTL 10分钟
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000
+
 # 兼容项（当 Hibernate 无法从 datasource 读取时）
 jakarta:
   persistence:

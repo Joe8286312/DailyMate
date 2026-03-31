@@ -4,6 +4,8 @@ import com.joe.dailymate.entity.Bill;
 import com.joe.dailymate.repository.BillRepository;
 import com.joe.dailymate.service.BillService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,18 +22,21 @@ public class BillServiceImpl implements BillService {
     @Autowired
     private BillRepository billRepository;
 
+    @CacheEvict(value = "bill_stat_month", allEntries = true)
     @Override
     public Bill addBill(Bill bill) {
         bill.setIsDelete(0);
         return billRepository.save(bill);
     }
 
+    @CacheEvict(value = "bill_stat_month", allEntries = true)
     @Override
     public Bill updateBill(Bill bill) {
         return billRepository.save(bill);
     }
 
     // 软删除替换硬删除
+    @CacheEvict(value = "bill_stat_month", allEntries = true)
     @Override
     public void deleteBill(Long id) {
         Bill bill = billRepository.findById(id).orElse(null);
@@ -103,6 +108,7 @@ public class BillServiceImpl implements BillService {
      * 月收支统计
      * @return Map key: income, expense, total
      */
+    @Cacheable(value = "bill_stat_month", key = "#userId + '_' + #year + '_' + #month")
     @Override
     public Map<String, Double> statMonth(Long userId, Integer year, Integer month) {
         LocalDate first = LocalDate.of(year, month, 1);
@@ -173,6 +179,7 @@ public class BillServiceImpl implements BillService {
     }
 
     // 批量软删除
+    @CacheEvict(value = "bill_stat_month", allEntries = true)
     @Transactional
     @Override
     public void batchDelete(List<Long> ids) {
