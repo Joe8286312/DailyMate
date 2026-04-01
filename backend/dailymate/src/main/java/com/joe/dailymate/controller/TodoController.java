@@ -1,152 +1,236 @@
 package com.joe.dailymate.controller;
 
+import com.joe.dailymate.common.Result;
+import com.joe.dailymate.dto.request.TodoRequest;
 import com.joe.dailymate.entity.Todo;
 import com.joe.dailymate.service.TodoService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 待办事项控制器
+ */
 @RestController
 @RequestMapping("/api/todo")
+@Validated
 public class TodoController {
+
     @Autowired
     private TodoService todoService;
 
+    /**
+     * 获取待办事项列表
+     */
     @GetMapping("/list")
-    public List<Todo> getTodoList(@RequestParam Long userId,
-                                  @RequestParam(required = false)
-                                  @DateTimeFormat(pattern = "yyyy-MM-dd") Date date) {
+    public Result<List<Todo>> getTodoList(@RequestParam Long userId,
+                                          @RequestParam(required = false)
+                                          @DateTimeFormat(pattern = "yyyy-MM-dd") Date date) {
+        List<Todo> todos;
         if (date != null) {
-            return todoService.getTodoListByUserAndDate(userId, date);
+            todos = todoService.getTodoListByUserAndDate(userId, date);
         } else {
-            return todoService.getTodoListByUser(userId);
+            todos = todoService.getTodoListByUser(userId);
         }
+        return Result.success(todos);
     }
-
-    @GetMapping("/{id}")
-    public Todo findById(@PathVariable Long id) {
-        return todoService.findById(id);
-    }
-
-    @PostMapping("/add")
-    public Todo addTodo(@RequestBody Todo todo) {
-        return todoService.addTodo(todo);
-    }
-
-    @DeleteMapping("/delete/{id}")
-    public void deleteTodo(@PathVariable Long id) {
-        todoService.deleteTodo(id);
-    }
-
-    @PutMapping("/update")
-    public Todo updateTodo(@RequestBody Todo todo) {
-        return todoService.updateTodo(todo);
-    }
-
-    // ========== 新增接口 ==========
 
     /**
-     * 按完成状态筛选（如获取全部未完成/已完成）
+     * 获取待办事项详情
+     */
+    @GetMapping("/{id}")
+    public Result<Todo> findById(@PathVariable Long id) {
+        Todo todo = todoService.findById(id);
+        if (todo == null) {
+            return Result.error(404, "待办事项不存在");
+        }
+        return Result.success(todo);
+    }
+
+    /**
+     * 添加待办事项
+     */
+    @PostMapping("/add")
+    public Result<Todo> addTodo(@Valid @RequestBody TodoRequest request) {
+        Todo todo = new Todo();
+        todo.setUserId(request.getUserId());
+        todo.setTitle(request.getTitle());
+        todo.setContent(request.getContent());
+        todo.setPriority(request.getPriority());
+        todo.setStatus(request.getStatus());
+        todo.setStartTime(request.getStartTime());
+        todo.setEndTime(request.getEndTime());
+        todo.setFinishTime(request.getFinishTime());
+
+        Todo saved = todoService.addTodo(todo);
+        return Result.success("添加成功", saved);
+    }
+
+    /**
+     * 更新待办事项
+     */
+    @PutMapping("/update")
+    public Result<Todo> updateTodo(@Valid @RequestBody TodoRequest request) {
+        Todo existing = todoService.findById(request.getId());
+        if (existing == null) {
+            return Result.error(404, "待办事项不存在");
+        }
+
+        existing.setTitle(request.getTitle());
+        existing.setContent(request.getContent());
+        existing.setPriority(request.getPriority());
+        existing.setStatus(request.getStatus());
+        existing.setStartTime(request.getStartTime());
+        existing.setEndTime(request.getEndTime());
+        existing.setFinishTime(request.getFinishTime());
+
+        Todo updated = todoService.updateTodo(existing);
+        return Result.success("更新成功", updated);
+    }
+
+    /**
+     * 删除待办事项（软删除）
+     */
+    @DeleteMapping("/delete/{id}")
+    public Result<Void> deleteTodo(@PathVariable Long id) {
+        todoService.deleteTodo(id);
+        return Result.successMessage("删除成功");
+    }
+
+    /**
+     * 按状态获取待办事项
      */
     @GetMapping("/by-status")
-    public List<Todo> getTodosByStatus(@RequestParam Long userId, @RequestParam Integer status) {
-        return todoService.getTodoListByUserAndStatus(userId, status);
+    public Result<List<Todo>> getTodosByStatus(@RequestParam Long userId,
+                                                @RequestParam Integer status) {
+        List<Todo> todos = todoService.getTodoListByUserAndStatus(userId, status);
+        return Result.success(todos);
     }
 
     /**
-     * 批量设置完成状态（批量完成/未完成）
+     * 批量更新状态
      */
     @PutMapping("/batch/finish")
-    public String batchUpdateStatus(@RequestBody Map<String, Object> req) {
-        List<Integer> ids = (List<Integer>) req.get("ids");
-        Integer newStatus = (Integer) req.get("status");
-        todoService.batchUpdateStatus(ids.stream().map(Long::valueOf).toList(), newStatus);
-        return "OK";
+    public Result<Void> batchUpdateStatus(@RequestBody Map<String, Object> request) {
+        @SuppressWarnings("unchecked")
+        List<Integer> ids = (List<Integer>) request.get("ids");
+        Integer status = (Integer) request.get("status");
+
+        if (ids == null || ids.isEmpty()) {
+            return Result.error(400, "请选择要操作的项目");
+        }
+
+        todoService.batchUpdateStatus(ids.stream().map(Long::valueOf).toList(), status);
+        return Result.successMessage("操作成功");
     }
 
     /**
      * 批量软删除
      */
     @PutMapping("/batch/delete")
-    public String batchDelete(@RequestBody Map<String, Object> req) {
-        List<Integer> ids = (List<Integer>) req.get("ids");
+    public Result<Void> batchDelete(@RequestBody Map<String, Object> request) {
+        @SuppressWarnings("unchecked")
+        List<Integer> ids = (List<Integer>) request.get("ids");
+
+        if (ids == null || ids.isEmpty()) {
+            return Result.error(400, "请选择要删除的项目");
+        }
+
         todoService.batchDelete(ids.stream().map(Long::valueOf).toList());
-        return "OK";
+        return Result.successMessage("批量删除成功");
     }
 
     /**
      * 彻底物理删除
      */
     @DeleteMapping("/hard-delete/{id}")
-    public String hardDelete(@PathVariable Long id) {
+    public Result<Void> hardDelete(@PathVariable Long id) {
         todoService.hardDelete(id);
-        return "OK";
+        return Result.successMessage("彻底删除成功");
     }
 
     /**
      * 批量彻底物理删除
      */
     @PutMapping("/batch/hard-delete")
-    public String batchHardDelete(@RequestBody Map<String, Object> req) {
-        List<Integer> ids = (List<Integer>) req.get("ids");
+    public Result<Void> batchHardDelete(@RequestBody Map<String, Object> request) {
+        @SuppressWarnings("unchecked")
+        List<Integer> ids = (List<Integer>) request.get("ids");
+
+        if (ids == null || ids.isEmpty()) {
+            return Result.error(400, "请选择要删除的项目");
+        }
+
         todoService.batchHardDelete(ids.stream().map(Long::valueOf).toList());
-        return "OK";
+        return Result.successMessage("批量彻底删除成功");
     }
 
     /**
      * 恢复已软删除的待办
      */
     @PutMapping("/restore/{id}")
-    public String restore(@PathVariable Long id) {
+    public Result<Void> restore(@PathVariable Long id) {
         todoService.restore(id);
-        return "OK";
+        return Result.successMessage("恢复成功");
     }
 
     /**
      * 模糊查找（按标题或内容）
      */
     @GetMapping("/search")
-    public List<Todo> searchTodo(@RequestParam Long userId, @RequestParam String keyword) {
-        return todoService.searchTodo(userId, keyword);
+    public Result<List<Todo>> searchTodo(@RequestParam Long userId,
+                                          @RequestParam String keyword) {
+        List<Todo> todos = todoService.searchTodo(userId, keyword);
+        return Result.success(todos);
     }
 
     /**
      * 日期区间查询
      */
     @GetMapping("/range")
-    public List<Todo> getTodosInRange(@RequestParam Long userId,
-                                      @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date start,
-                                      @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date end) {
-        return todoService.getTodoListByUserAndDateRange(userId, start, end);
+    public Result<List<Todo>> getTodosInRange(@RequestParam Long userId,
+                                               @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date start,
+                                               @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") Date end) {
+        List<Todo> todos = todoService.getTodoListByUserAndDateRange(userId, start, end);
+        return Result.success(todos);
     }
 
     /**
      * 修改优先级
      */
     @PutMapping("/priority/{id}")
-    public String updatePriority(@PathVariable Long id, @RequestBody Map<String, Integer> req) {
-        Integer priority = req.get("priority");
+    public Result<Void> updatePriority(@PathVariable Long id,
+                                        @RequestBody Map<String, Integer> request) {
+        Integer priority = request.get("priority");
+        if (priority == null) {
+            return Result.error(400, "优先级不能为空");
+        }
         todoService.updatePriority(id, priority);
-        return "OK";
+        return Result.successMessage("更新成功");
     }
 
     /**
      * 获取未完成数量
      */
     @GetMapping("/unfinished-count")
-    public long getUnfinishedCount(@RequestParam Long userId) {
-        return todoService.countUnfinished(userId);
+    public Result<Long> getUnfinishedCount(@RequestParam Long userId) {
+        long count = todoService.countUnfinished(userId);
+        return Result.success(count);
     }
 
     /**
      * 按优先级筛选
      */
     @GetMapping("/by-priority")
-    public List<Todo> getByPriority(@RequestParam Long userId, @RequestParam Integer priority) {
-        return todoService.getTodoListByUserAndPriority(userId, priority);
+    public Result<List<Todo>> getByPriority(@RequestParam Long userId,
+                                             @RequestParam Integer priority) {
+        List<Todo> todos = todoService.getTodoListByUserAndPriority(userId, priority);
+        return Result.success(todos);
     }
-
 }

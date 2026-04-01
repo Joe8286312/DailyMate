@@ -23,7 +23,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // 放行认证相关接口
+                        .requestMatchers("/api/auth/**", "/api/user/**").permitAll()
+                        // 放行消息通知接口
+                        .requestMatchers("/api/message/**").permitAll()
+                        // 放行 Swagger 文档
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .anyRequest().authenticated()
                 )

@@ -1,66 +1,94 @@
 package com.joe.dailymate.controller;
 
-import com.joe.dailymate.dto.LoginRequest;
-import com.joe.dailymate.dto.RegisterRequest;
+import com.joe.dailymate.common.Result;
+import com.joe.dailymate.dto.request.LoginRequest;
+import com.joe.dailymate.dto.request.RegisterRequest;
 import com.joe.dailymate.entity.User;
 import com.joe.dailymate.service.UserService;
 import com.joe.dailymate.util.JwtUtil;
 import com.joe.dailymate.util.PasswordUtil;
-
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 认证控制器
+ */
 @RestController
 @RequestMapping("/api/auth")
+@Validated
 public class AuthController {
 
     @Autowired
     private UserService userService;
 
-    // 注册接口
+    /**
+     * 用户注册
+     */
     @PostMapping("/register")
-    public Map<String, Object> register(@RequestBody RegisterRequest req) {
-        User exist = userService.findByUsername(req.getUsername());
-        Map<String, Object> resp = new HashMap<>();
-        if(exist != null){
-            resp.put("success", false);
-            resp.put("msg", "用户名已存在");
-            return resp;
+    public Result<User> register(@Valid @RequestBody RegisterRequest request) {
+        // 检查用户名是否已存在
+        User exist = userService.findByUsername(request.getUsername());
+        if (exist != null) {
+            return Result.error(400, "用户名已存在");
         }
-        User u = new User();
-        u.setUsername(req.getUsername());
-        u.setPassword(PasswordUtil.encode(req.getPassword()));
-        u.setAvatar(req.getAvatar());
-        u.setEmail(req.getEmail());
-        User saved = userService.saveUser(u);
-        resp.put("success", true);
-        resp.put("msg", "注册成功");
-        resp.put("user", saved);
-        return resp;
+
+        // 创建新用户
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(PasswordUtil.encode(request.getPassword()));
+        user.setAvatar(request.getAvatar());
+        user.setEmail(request.getEmail());
+
+        User saved = userService.saveUser(user);
+        return Result.success("注册成功", saved);
     }
 
-    // 登录接口
+    /**
+     * 用户登录
+     */
     @PostMapping("/login")
-    public Map<String, Object> login(@RequestBody LoginRequest req) {
-        User user = userService.findByUsername(req.getUsername());
-        Map<String, Object> result = new HashMap<>();
-        if (user == null || user.getIsDelete() != null && user.getIsDelete() == 1) {
-            result.put("success", false);
-            result.put("msg", "用户不存在或已删除");
-            return result;
+    public Result<Map<String, Object>> login(@Valid @RequestBody LoginRequest request) {
+        User user = userService.findByUsername(request.getUsername());
+
+        // 检查用户是否存在或已被删除
+        if (user == null || (user.getIsDelete() != null && user.getIsDelete() == 1)) {
+            return Result.error(401, "用户名或密码错误");
         }
-        if (!PasswordUtil.match(req.getPassword(), user.getPassword())) {
-            result.put("success", false);
-            result.put("msg", "密码错误");
-            return result;
+
+        // 验证密码
+        if (!PasswordUtil.match(request.getPassword(), user.getPassword())) {
+            return Result.error(401, "用户名或密码错误");
         }
+
+        // 生成 JWT Token
         String token = JwtUtil.generateToken(user.getId(), user.getUsername());
-        result.put("success", true);
-        result.put("token", token);
-        result.put("user", user);
-        return result;
+
+        // 返回用户信息（不包含密码）
+        User safeUser = new User();
+        safeUser.setId(user.getId());
+        safeUser.setUsername(user.getUsername());
+        safeUser.setEmail(user.getEmail());
+        safeUser.setAvatar(user.getAvatar());
+        safeUser.setCreatedAt(user.getCreatedAt());
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("token", token);
+        data.put("user", safeUser);
+
+        return Result.success("登录成功", data);
+    }
+
+    /**
+     * 退出登录
+     */
+    @PostMapping("/logout")
+    public Result<Void> logout() {
+        // JWT 无状态，前端删除 token 即可
+        return Result.successMessage("退出成功");
     }
 }

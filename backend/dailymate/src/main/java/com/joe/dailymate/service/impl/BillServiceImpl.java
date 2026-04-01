@@ -1,5 +1,6 @@
 package com.joe.dailymate.service.impl;
 
+import com.joe.dailymate.dto.BillStatistics;
 import com.joe.dailymate.entity.Bill;
 import com.joe.dailymate.repository.BillRepository;
 import com.joe.dailymate.service.BillService;
@@ -8,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -179,5 +182,78 @@ public class BillServiceImpl implements BillService {
             bill.setIsDelete(0);
             billRepository.save(bill);
         }
+    }
+    
+    @Override
+    public BillStatistics getStatistics(Long userId, Integer year, Integer month) {
+        LocalDate now = LocalDate.now();
+        YearMonth targetMonth;
+
+        if (year == null || month == null) {
+            targetMonth = YearMonth.from(now);
+        } else {
+            targetMonth = YearMonth.of(year, month);
+        }
+
+        LocalDate start = targetMonth.atDay(1);
+        LocalDate end = targetMonth.atEndOfMonth();
+
+        Date startDate = Date.from(start.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        Date endDate = Date.from(end.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant());
+
+        // 获取该时间段内所有账单
+        List<Bill> bills = billRepository.findByUserIdAndIsDeleteAndDateBetween(userId, 0, startDate, endDate);
+
+        // 计算总收入和总支出
+        double totalIncome = bills.stream()
+            .filter(b -> b.getType() == 1)
+            .mapToDouble(Bill::getAmount)
+            .sum();
+
+        double totalExpense = bills.stream()
+            .filter(b -> b.getType() == 2)
+            .mapToDouble(Bill::getAmount)
+            .sum();
+
+        double balance = totalIncome - totalExpense;
+
+        // 分类统计
+        Map<String, Double> categoryStats = bills.stream()
+            .filter(b -> b.getType() == 2) // 只统计支出分类
+            .collect(Collectors.groupingBy(
+                Bill::getCategory,
+                Collectors.summingDouble(Bill::getAmount)
+            ));
+
+        // 月度趋势（最近 6 个月）
+        List<BillStatistics.MonthlyTrend> monthlyTrend = new ArrayList<>();
+        for (int i = 5; i >= 0; i--) {
+            YearMonth ym = targetMonth.minusMonths(i);
+            LocalDate mStart = ym.atDay(1);
+            LocalDate mEnd = ym.atEndOfMonth();
+
+            Date mStartDate = Date.from(mStart.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            Date mEndDate = Date.from(mEnd.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant());
+
+            List<Bill> monthBills = billRepository.findByUserIdAndIsDeleteAndDateBetween(userId, 0, mStartDate, mEndDate);
+
+            double mIncome = monthBills.stream()
+                .filter(b -> b.getType() == 1)
+                .mapToDouble(Bill::getAmount)
+                .sum();
+
+            double mExpense = monthBills.stream()
+                .filter(b -> b.getType() == 2)
+                .mapToDouble(Bill::getAmount)
+                .sum();
+
+            monthlyTrend.add(new BillStatistics.MonthlyTrend(
+                ym.format(DateTimeFormatter.ofPattern("yyyy-MM")),
+                mIncome,
+                mExpense
+            ));
+        }
+
+        return new BillStatistics(totalIncome, totalExpense, balance, categoryStats, monthlyTrend);
     }
 }

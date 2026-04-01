@@ -1,0 +1,33 @@
+# 编辑器配置
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+insert_final_newline = false
+trim_trailing_whitespace = false
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.json]
+indent_size = 2
+
+[*.js]
+indent_size = 2
+
+[*.vue]
+indent_size = 2
+
+[*.scss]
+indent_size = 2
+
+[*.java]
+indent_size = 4
+end_of_line = crlf

@@ -1,0 +1,23 @@
+# 后端 Java 项目编辑器配置
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+insert_final_newline = false
+trim_trailing_whitespace = false
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.{xml,properties}]
+indent_size = 4
+
+[*.java]
+indent_size = 4

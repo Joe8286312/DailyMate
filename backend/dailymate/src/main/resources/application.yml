@@ -1,47 +1,144 @@
 # language: yaml
-# 文件：src/main/resources/application.yml
+# 主配置文件
 spring:
   application:
     name: dailymate
+  profiles:
+    active: dev  # 默认激活开发环境
+
+---
+# 开发环境配置
+spring:
+  config:
+    activate:
+      on-profile: dev
 
   datasource:
-    # 添加 allowPublicKeyRetrieval=true 与 useSSL=false，保留 serverTimezone/characterEncoding
     url: jdbc:mysql://localhost:3306/dailymate?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8
     username: root
     password: xiesuyang888
-#    password: xiang123
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikaricp:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
 
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
-    # 使用通用的 Dialect，避免类名不一致问题
     database-platform: org.hibernate.dialect.MySQLDialect
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
 
-  # 禁用 devtools 重启（若出现类加载/方言类找不到的奇怪错误，临时关闭以排查）
+  jackson:
+    time-zone: Asia/Shanghai
+    date-format: yyyy-MM-dd HH:mm:ss
+
+  # 开发环境禁用重启
   devtools:
     restart:
       enabled: false
 
-  # 设置时区为上海
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.joe.dailymate: DEBUG
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
+
+# JWT 配置
+jwt:
+  secret: ${JWT_SECRET:dailymate-dev-secret-key-2024}
+  expiration: 86400000  # 24 小时
+
+---
+# 生产环境配置
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/dailymate?useSSL=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8
+    username: root
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikaricp:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    database-platform: org.hibernate.dialect.MySQLDialect
+
   jackson:
     time-zone: Asia/Shanghai
-
-# 兼容项（当 Hibernate 无法从 datasource 读取时）
-jakarta:
-  persistence:
-    jdbc:
-      url: jdbc:mysql://localhost:3306/dailymate?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=utf8
-      driver: com.mysql.cj.jdbc.Driver
-      user: root
-#      password: xiang123
-      password: xiesuyang888
-
+    date-format: yyyy-MM-dd HH:mm:ss
 
 server:
   port: 8080
+  servlet:
+    context-path: /
+
+# 日志配置
+logging:
+  level:
+    root: WARN
+    com.joe.dailymate: INFO
+  file:
+    name: logs/dailymate.log
+    max-size: 10MB
+    max-history: 30
+  pattern:
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n'
+
+# JWT 配置（生产环境必须使用环境变量）
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000
+
+---
+# 测试环境配置
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/dailymate_test?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8
+    username: root
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    database-platform: org.hibernate.dialect.MySQLDialect
+
+server:
+  port: 8081
+
+logging:
+  level:
+    root: INFO
+    com.joe.dailymate: DEBUG
+
+jwt:
+  secret: dailymate-test-secret-key
+  expiration: 3600000  # 1 小时

@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: dailymate-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root123}
+      MYSQL_DATABASE: dailymate
+      MYSQL_USER: dailymate
+      MYSQL_PASSWORD: ${DB_PASSWORD:-dailymate123}
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docs/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dailymate-network
+
+  # 后端服务
+  backend:
+    build:
+      context: ./backend/dailymate
+      dockerfile: Dockerfile
+    container_name: dailymate-backend
+    restart: always
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_PASSWORD: ${DB_PASSWORD:-dailymate123}
+      JWT_SECRET: ${JWT_SECRET:-dailymate-prod-secret-key-2024}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/dailymate?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - dailymate-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dailymate-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - dailymate-network
+
+volumes:
+  mysql-data:
+    driver: local
+
+networks:
+  dailymate-network:
+    driver: bridge

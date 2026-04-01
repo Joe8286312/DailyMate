@@ -48,4 +48,7 @@ public interface BillService {
 
     // 新增：账单恢复
     void restore(Long id);
+
+    // 新增：账单统计
+    com.joe.dailymate.dto.BillStatistics getStatistics(Long userId, Integer year, Integer month);
 }

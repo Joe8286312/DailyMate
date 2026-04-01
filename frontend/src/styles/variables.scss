@@ -1,0 +1,66 @@
+// 全局 SCSS 变量
+
+// 主题色
+$primary-color: #409eff;
+$primary-dark: #337ecc;
+$success-color: #67c23a;
+$warning-color: #e6a23c;
+$danger-color: #f56c6c;
+$info-color: #909399;
+
+// 字体
+$font-family-base: 'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+$font-size-base: 14px;
+$font-size-small: 12px;
+$font-size-large: 16px;
+$font-size-extra-large: 18px;
+
+// 间距
+$spacing-base: 8px;
+$spacing-sm: 4px;
+$spacing-md: 8px;
+$spacing-lg: 16px;
+$spacing-xl: 24px;
+
+// 边框
+$border-color-base: #dcdfe6;
+$border-color-light: #e4e7ed;
+$border-radius-base: 4px;
+$border-radius-small: 2px;
+$border-radius-large: 8px;
+$border-radius-round: 4px;
+
+// 背景色
+$background-color-base: #f5f7fa;
+$background-color-page: #e4edf5;
+
+// 文字颜色
+$text-color-primary: #303133;
+$text-color-regular: #606266;
+$text-color-secondary: #909399;
+$text-color-placeholder: #c0c4cc;
+
+// 别名变量（兼容旧代码）
+$text-regular: $text-color-regular;
+$text-secondary: $text-color-secondary;
+$text-placeholder: $text-color-placeholder;
+
+// 阴影
+$box-shadow-base: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+$box-shadow-dark: 0 2px 12px 0 rgba(0, 0, 0, 0.2);
+$box-shadow-light: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+$shadow-light: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+
+// 布局
+$sidebar-width: 200px;
+$header-height: 60px;
+
+// 动画
+$transition-base: all 0.3s ease-in-out;
+$transition-fast: all 0.2s ease-in-out;
+$transition-slow: all 0.5s ease-in-out;
+
+// 断点
+$breakpoint-mobile: 768px;
+$breakpoint-tablet: 1024px;
+$breakpoint-desktop: 1440px;
