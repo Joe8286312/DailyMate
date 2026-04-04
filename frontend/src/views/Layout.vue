@@ -22,17 +22,22 @@
         >
           <el-menu-item index="/dashboard" class="menu-item">
             <el-icon><DataAnalysis /></el-icon>
-            <template #title>仪表盘</template>
+            <template #title>{{ t('nav.dashboard') }}</template>
           </el-menu-item>
 
           <el-menu-item index="/todos" class="menu-item">
             <el-icon><List /></el-icon>
-            <template #title>待办事项</template>
+            <template #title>{{ t('nav.todos') }}</template>
           </el-menu-item>
 
           <el-menu-item index="/bills" class="menu-item">
             <el-icon><Money /></el-icon>
-            <template #title>账单管理</template>
+            <template #title>{{ t('nav.bills') }}</template>
+          </el-menu-item>
+
+          <el-menu-item index="/settings" class="menu-item">
+            <el-icon><Setting /></el-icon>
+            <template #title>{{ t('nav.settings') }}</template>
           </el-menu-item>
         </el-menu>
 
@@ -45,7 +50,7 @@
             <el-icon :size="18">
               <component :is="isCollapse ? 'Expand' : 'Fold'" />
             </el-icon>
-            <span v-show="!isCollapse">收起</span>
+            <span v-show="!isCollapse">{{ t('layout.collapse') }}</span>
           </el-button>
         </div>
       </el-aside>
@@ -78,17 +83,17 @@
               </div>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="profile">
-                    <el-icon><User /></el-icon>
-                    个人信息
+                  <el-dropdown-item command="settings">
+                    <el-icon><Setting /></el-icon>
+                    {{ t('layout.profileSettings') }}
                   </el-dropdown-item>
                   <el-dropdown-item command="notification">
                     <el-icon><Bell /></el-icon>
-                    通知设置
+                    {{ t('layout.notificationSettings') }}
                   </el-dropdown-item>
                   <el-dropdown-item command="logout" divided>
                     <el-icon><SwitchButton /></el-icon>
-                    退出登录
+                    {{ t('nav.logout') }}
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -116,9 +121,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+import { ElMessageBox } from 'element-plus'
 import { Bell } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useMessageStore } from '@/stores/message'
@@ -128,6 +134,7 @@ import { sendSystemNotification } from '@/utils/notification'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const messageStore = useMessageStore()
 
@@ -136,7 +143,15 @@ const messageDrawerRef = ref(null)
 const notificationSettingsRef = ref(null)
 
 const activeMenu = computed(() => route.path)
-const pageTitle = computed(() => route.meta.title || 'DailyMate')
+const pageTitle = computed(() => {
+  const titleMap = {
+    '/dashboard': t('nav.dashboard'),
+    '/todos': t('nav.todos'),
+    '/bills': t('nav.bills'),
+    '/settings': t('nav.settings')
+  }
+  return titleMap[route.path] || 'DailyMate'
+})
 const username = computed(() => authStore.username)
 const unreadCount = computed(() => messageStore.unreadCount)
 
@@ -151,9 +166,9 @@ const openMessageDrawer = () => {
 const handleCommand = async (command) => {
   if (command === 'logout') {
     try {
-      await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+      await ElMessageBox.confirm(t('layout.logoutConfirm'), t('common.tip'), {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning'
       })
       await authStore.logout()
@@ -161,8 +176,8 @@ const handleCommand = async (command) => {
     } catch {
       // 取消退出
     }
-  } else if (command === 'profile') {
-    ElMessage.info('功能开发中...')
+  } else if (command === 'settings') {
+    router.push('/settings')
   } else if (command === 'notification') {
     notificationSettingsRef.value?.open()
   }
@@ -170,13 +185,11 @@ const handleCommand = async (command) => {
 
 // 定时获取未读消息数量
 let pollTimer = null
-let lastUnreadCount = 0
 
 const startPolling = () => {
   // 先获取一次
   if (authStore.userInfo?.id) {
     messageStore.fetchUnreadCount(authStore.userInfo.id)
-    lastUnreadCount = messageStore.unreadCount
   }
 
   pollTimer = setInterval(() => {
@@ -190,14 +203,13 @@ const startPolling = () => {
         if (newCount > prevCount && newCount > 0) {
           // 有新消息，发送系统通知
           sendSystemNotification({
-            title: '📬 新消息提醒',
-            body: `您有 ${newCount - prevCount} 条新消息，请及时查看`,
+            title: t('layout.newMessageTitle'),
+            body: t('layout.newMessageBody', { count: newCount - prevCount }),
             onClick: () => {
               messageDrawerRef.value?.open()
             }
           })
         }
-        lastUnreadCount = newCount
       }, 500)
     }
   }, 30000) // 每 30 秒刷新一次
@@ -209,13 +221,20 @@ onMounted(() => {
   }
   startPolling()
 })
+
+onBeforeUnmount(() => {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+})
 </script>
 
 <style lang="scss" scoped>
 .layout-container {
   height: 100vh;
   width: 100%;
-  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  background: transparent;
 }
 
 .el-container {

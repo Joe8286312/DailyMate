@@ -41,6 +41,12 @@ const routes = [
         name: 'Bills',
         component: () => import('@/views/Bills.vue'),
         meta: { title: '账单管理' }
+      },
+      {
+        path: 'settings',
+        name: 'Settings',
+        component: () => import('@/views/Settings.vue'),
+        meta: { title: '设置' }
       }
     ]
   }

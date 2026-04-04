@@ -19,9 +19,15 @@ body {
   font-family: $font-family-base;
   font-size: $font-size-base;
   color: $text-regular;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+  background: transparent;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+// 让全局容器透明，避免遮挡背景图
+#app, #app-container,
+.el-container, .el-header, .el-main, .el-aside {
+  background: transparent !important;
 }
 
 // 滚动条样式

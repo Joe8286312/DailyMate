@@ -9,7 +9,7 @@ let permission = 'default'
 /**
  * 请求通知权限
  */
-export async function requestNotificationPermission() {
+export async function requestNotificationPermission () {
   if (!('Notification' in window)) {
     console.warn('当前浏览器不支持系统通知')
     return false
@@ -32,7 +32,7 @@ export async function requestNotificationPermission() {
 /**
  * 检查通知权限
  */
-export function checkNotificationPermission() {
+export function checkNotificationPermission () {
   if (!('Notification' in window)) {
     return 'unsupported'
   }
@@ -50,7 +50,7 @@ export function checkNotificationPermission() {
  * @param {Function} [options.onClick] - 点击回调
  * @param {Function} [options.onClose] - 关闭回调
  */
-export function sendSystemNotification({
+export function sendSystemNotification ({
   title,
   body,
   icon = '/logo.png',
@@ -131,7 +131,7 @@ export function sendSystemNotification({
 /**
  * 发送待办提醒通知
  */
-export function sendTodoNotification(todo) {
+export function sendTodoNotification (todo) {
   return sendSystemNotification({
     title: '📋 待办事项提醒',
     body: `${todo.title} - ${todo.endTime ? '截止时间：' + new Date(todo.endTime).toLocaleString() : ''}`,
@@ -145,7 +145,7 @@ export function sendTodoNotification(todo) {
 /**
  * 发送账单提醒通知
  */
-export function sendBillNotification(bill) {
+export function sendBillNotification (bill) {
   const typeText = bill.type === 1 ? '收入' : '支出'
   return sendSystemNotification({
     title: '💰 账单提醒',
@@ -160,7 +160,7 @@ export function sendBillNotification(bill) {
 /**
  * 发送通用消息通知
  */
-export function sendMessageNotification(message) {
+export function sendMessageNotification (message) {
   const typeIcons = {
     1: '📢',
     2: '📋',
@@ -184,7 +184,7 @@ export function sendMessageNotification(message) {
 /**
  * 播放通知声音
  */
-export function playNotificationSound() {
+export function playNotificationSound () {
   try {
     const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU')
     audio.volume = 0.3

@@ -25,7 +25,7 @@ export default defineConfig(({ mode, command }) => {
     css: {
       preprocessorOptions: {
         scss: {
-          additionalData: `@use "@/styles/variables.scss" as *;`
+          additionalData: '@use "@/styles/variables.scss" as *;'
         }
       }
     },
@@ -95,7 +95,8 @@ export default defineConfig(({ mode, command }) => {
         'axios',
         'element-plus',
         '@element-plus/icons-vue',
-        'dayjs'
+        'dayjs',
+        'vue-i18n'
       ],
       exclude: []
     },

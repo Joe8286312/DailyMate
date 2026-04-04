@@ -6,8 +6,7 @@ import {
   handleNetworkError,
   handleApiError,
   handleAuthError,
-  retry,
-  ErrorType
+  retry
 } from '@/utils/errorHandler'
 
 // 创建 axios 实例
@@ -23,7 +22,7 @@ let loadingInstance = null
 /**
  * 显示 loading
  */
-function showLoading() {
+function showLoading () {
   loadingCount++
   if (loadingCount === 1) {
     loadingInstance = ElLoading.service({
@@ -37,7 +36,7 @@ function showLoading() {
 /**
  * 隐藏 loading
  */
-function hideLoading() {
+function hideLoading () {
   loadingCount--
   if (loadingCount <= 0) {
     loadingCount = 0
@@ -70,7 +69,7 @@ request.interceptors.request.use(
   error => {
     hideLoading()
     const appError = new (class extends Error {
-      constructor(message, type, originalError) {
+      constructor (message, type, originalError) {
         super(message)
         this.name = 'AppError'
         this.type = type
@@ -117,28 +116,28 @@ request.interceptors.response.use(
 
     // HTTP 错误
     switch (error.response.status) {
-      case 401:
-        handleAuthError(error)
-        ElMessage.error('未授权，请重新登录')
-        localStorage.removeItem('dailyMate_token')
-        localStorage.removeItem('dailyMate_user')
-        router.push('/login')
-        break
-      case 403:
-        handleApiError(error, '拒绝访问')
-        ElMessage.error('拒绝访问')
-        break
-      case 404:
-        handleApiError(error, '请求的资源不存在')
-        ElMessage.error('请求的资源不存在')
-        break
-      case 500:
-        handleApiError(error, '服务器内部错误')
-        ElMessage.error('服务器内部错误')
-        break
-      default:
-        handleApiError(error, error.response.data?.message || '请求失败')
-        ElMessage.error(error.response.data?.message || '请求失败')
+    case 401:
+      handleAuthError(error)
+      ElMessage.error('未授权，请重新登录')
+      localStorage.removeItem('dailyMate_token')
+      localStorage.removeItem('dailyMate_user')
+      router.push('/login')
+      break
+    case 403:
+      handleApiError(error, '拒绝访问')
+      ElMessage.error('拒绝访问')
+      break
+    case 404:
+      handleApiError(error, '请求的资源不存在')
+      ElMessage.error('请求的资源不存在')
+      break
+    case 500:
+      handleApiError(error, '服务器内部错误')
+      ElMessage.error('服务器内部错误')
+      break
+    default:
+      handleApiError(error, error.response.data?.message || '请求失败')
+      ElMessage.error(error.response.data?.message || '请求失败')
     }
 
     return Promise.reject(error)
@@ -150,7 +149,7 @@ request.interceptors.response.use(
  * @param {Function} requestFn - 请求函数
  * @param {Object} options - 重试选项
  */
-export function requestWithRetry(requestFn, options = {}) {
+export function requestWithRetry (requestFn, options = {}) {
   return retry(requestFn, {
     maxRetries: options.maxRetries || 3,
     delay: options.delay || 1000,

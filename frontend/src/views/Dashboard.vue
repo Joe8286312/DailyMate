@@ -10,7 +10,7 @@
       </div>
       <el-button type="primary" round @click="handleQuickAdd" class="quick-add-btn">
         <el-icon><Plus /></el-icon>
-        快速添加
+        {{ t('common.quickAdd') }}
       </el-button>
     </div>
 
@@ -22,11 +22,11 @@
             <div class="stat-icon-wrapper">
               <el-icon :size="20"><List /></el-icon>
             </div>
-            <el-tag type="primary" size="small" effect="plain">待办</el-tag>
+            <el-tag type="primary" size="small" effect="plain">{{ t('nav.todos') }}</el-tag>
           </div>
           <div class="stat-body">
             <div class="stat-value">{{ todoDoneCount + todoUndoneCount }}</div>
-            <div class="stat-label">总任务数</div>
+            <div class="stat-label">{{ t('dashboardPage.totalTasks') }}</div>
           </div>
           <el-progress
             :percentage="todoCompletionRate"
@@ -35,7 +35,7 @@
             class="stat-progress"
           />
           <div class="stat-footer">
-            <span class="footer-label">已完成</span>
+            <span class="footer-label">{{ t('dashboardPage.completed') }}</span>
             <span class="footer-value text-success">{{ todoDoneCount }}</span>
           </div>
         </el-card>
@@ -47,14 +47,14 @@
             <div class="stat-icon-wrapper">
               <el-icon :size="20"><TrendCharts /></el-icon>
             </div>
-            <el-tag type="success" size="small" effect="plain">收入</el-tag>
+            <el-tag type="success" size="small" effect="plain">{{ t('dashboardPage.income') }}</el-tag>
           </div>
           <div class="stat-body">
             <div class="stat-value text-success">¥{{ incomeAmount }}</div>
-            <div class="stat-label">本月收入</div>
+            <div class="stat-label">{{ t('dashboardPage.monthIncome') }}</div>
           </div>
           <div class="stat-footer">
-            <span class="footer-label">今日</span>
+            <span class="footer-label">{{ t('common.today') }}</span>
             <span class="footer-value text-success">+¥{{ todayIncome }}</span>
           </div>
         </el-card>
@@ -66,14 +66,14 @@
             <div class="stat-icon-wrapper">
               <el-icon :size="20"><Money /></el-icon>
             </div>
-            <el-tag type="danger" size="small" effect="plain">支出</el-tag>
+            <el-tag type="danger" size="small" effect="plain">{{ t('dashboardPage.expense') }}</el-tag>
           </div>
           <div class="stat-body">
             <div class="stat-value text-danger">¥{{ expenseAmount }}</div>
-            <div class="stat-label">本月支出</div>
+            <div class="stat-label">{{ t('dashboardPage.monthExpense') }}</div>
           </div>
           <div class="stat-footer">
-            <span class="footer-label">今日</span>
+            <span class="footer-label">{{ t('common.today') }}</span>
             <span class="footer-value text-danger">-¥{{ todayExpense }}</span>
           </div>
         </el-card>
@@ -85,16 +85,16 @@
             <div class="stat-icon-wrapper">
               <el-icon :size="20"><Wallet /></el-icon>
             </div>
-            <el-tag type="warning" size="small" effect="plain">结余</el-tag>
+            <el-tag type="warning" size="small" effect="plain">{{ t('dashboardPage.balance') }}</el-tag>
           </div>
           <div class="stat-body">
             <div class="stat-value" :class="balance >= 0 ? 'text-success' : 'text-danger'">
               ¥{{ balance }}
             </div>
-            <div class="stat-label">本月结余</div>
+            <div class="stat-label">{{ t('dashboardPage.monthBalance') }}</div>
           </div>
           <div class="stat-footer">
-            <span class="footer-label">储蓄率</span>
+            <span class="footer-label">{{ t('dashboardPage.savingsRate') }}</span>
             <span class="footer-value" :class="savingsRate >= 0 ? 'text-success' : 'text-danger'">
               {{ savingsRate }}%
             </span>
@@ -116,7 +116,7 @@
                   <el-icon><ArrowLeft /></el-icon>
                 </el-button>
                 <el-button circle size="small" @click="today" class="today-btn">
-                  今天
+                  {{ t('dashboardPage.calendarTodayButton') }}
                 </el-button>
                 <el-button circle size="small" @click="nextMonth">
                   <el-icon><ArrowRight /></el-icon>
@@ -150,81 +150,51 @@
                     :key="index"
                     class="event-dot"
                     :class="dot === 1 ? 'todo-dot' : 'bill-dot'"
-                  ></span>
+                  />
                 </div>
               </div>
             </div>
           </div>
         </el-card>
 
-        <!-- 黄历和 Tips -->
-        <el-card class="almanac-card">
-          <template #header>
-            <div class="almanac-header">
-              <span class="almanac-title">
-                <el-icon><Sunrise /></el-icon>
-                老黄历
-              </span>
-              <el-tag type="warning" size="small" effect="plain">
-                {{ lunarDate?.gzYear }}年 {{ lunarDate?.animal }}年
-              </el-tag>
-            </div>
-          </template>
-          <div class="almanac-body">
-            <div class="almanac-date">
-              <div class="lunar-date">
+        <!-- 黄历和 Tips 合并卡片 - 紧凑版本 -->
+        <el-card class="info-card">
+          <div class="info-body">
+            <div class="info-row">
+              <div class="date-section">
                 <span class="lunar-day">{{ lunarDate?.dayCn }}</span>
                 <span class="lunar-month">{{ lunarDate?.monthCn }}</span>
+                <span class="solar-date">{{ selectedDate.format('MM.DD') }}</span>
+                <el-tag type="warning" size="small" effect="plain" class="year-tag">
+                  {{ lunarDate?.gzYear }}{{ lunarDate?.animal }}
+                </el-tag>
               </div>
-              <div class="solar-date">
-                {{ selectedDate.format('MM 月 DD 日') }}
-              </div>
-            </div>
-            <div class="almanac-grid">
-              <div class="almanac-item">
-                <span class="item-label">宜</span>
-                <div class="item-content good">
-                  <span v-for="(act, idx) in almanac?.good" :key="idx" class="almanac-tag">
-                    {{ act }}
-                  </span>
+              <div class="almanac-section">
+                <span class="good-tag">{{ t('dashboardPage.goodTag') }}</span>
+                <div class="almanac-list">
+                  <span v-for="(act, idx) in almanac?.good?.slice(0, 3)" :key="idx" class="almanac-item">{{ act }}</span>
                 </div>
               </div>
-              <div class="almanac-item">
-                <span class="item-label">忌</span>
-                <div class="item-content bad">
-                  <span v-for="(act, idx) in almanac?.bad" :key="idx" class="almanac-tag">
-                    {{ act }}
-                  </span>
+              <div class="almanac-section">
+                <span class="bad-tag">{{ t('dashboardPage.badTag') }}</span>
+                <div class="almanac-list">
+                  <span v-for="(act, idx) in almanac?.bad?.slice(0, 3)" :key="idx" class="almanac-item">{{ act }}</span>
                 </div>
               </div>
-              <div class="almanac-item">
-                <span class="item-label">冲煞</span>
-                <span class="item-content">{{ almanac?.chongSha }}</span>
-              </div>
-              <div class="almanac-item">
-                <span class="item-label">财神</span>
-                <span class="item-content">{{ almanac?.godOfWealth }}</span>
+              <div class="tips-section">
+                <el-icon class="tips-icon"><Lightbulb /></el-icon>
+                <span class="tip-text">{{ currentTip }}</span>
+                <el-button
+                  link
+                  type="primary"
+                  size="small"
+                  @click="refreshTip"
+                  class="refresh-btn"
+                >
+                  <el-icon><Refresh /></el-icon>
+                </el-button>
               </div>
             </div>
-          </div>
-        </el-card>
-
-        <!-- 每日 Tips -->
-        <el-card class="tips-card">
-          <template #header>
-            <div class="tips-header">
-              <span class="tips-title">
-                <el-icon><Lightbulb /></el-icon>
-                每日小贴士
-              </span>
-              <el-button link type="primary" size="small" @click="refreshTip">
-                <el-icon><Refresh /></el-icon>
-                换一个
-              </el-button>
-            </div>
-          </template>
-          <div class="tips-content">
-            <p class="tip-text">{{ currentTip }}</p>
           </div>
         </el-card>
       </el-col>
@@ -234,16 +204,16 @@
         <!-- 快捷操作 -->
         <el-card class="quick-actions-card">
           <template #header>
-            <span class="card-title">快捷操作</span>
+            <span class="card-title">{{ t('dashboardPage.quickActions') }}</span>
           </template>
           <div class="action-buttons">
             <el-button type="primary" @click="goToTodos" class="action-btn">
               <el-icon><List /></el-icon>
-              <span>添加待办</span>
+              <span>{{ t('dashboardPage.addTodo') }}</span>
             </el-button>
             <el-button type="success" @click="goToBills" class="action-btn">
               <el-icon><Money /></el-icon>
-              <span>添加账单</span>
+              <span>{{ t('dashboardPage.addBill') }}</span>
             </el-button>
           </div>
         </el-card>
@@ -252,9 +222,9 @@
         <el-card class="today-todos-card">
           <template #header>
             <div class="card-header-between">
-              <span class="card-title">今日待办</span>
+              <span class="card-title">{{ t('dashboardPage.todayTodos') }}</span>
               <el-button link type="primary" size="small" @click="goToTodos">
-                查看全部
+                {{ t('common.viewAll') }}
               </el-button>
             </div>
           </template>
@@ -271,11 +241,11 @@
               />
               <span class="todo-title">{{ todo.title }}</span>
               <el-tag v-if="todo.priority === 1" type="danger" size="small" class="priority-tag">
-                高
+                {{ t('todo.high') }}
               </el-tag>
             </div>
           </div>
-          <el-empty v-else description="今日暂无待办" :image-size="50" />
+          <el-empty v-else :description="t('dashboardPage.noTodayTodos')" :image-size="50" />
         </el-card>
       </el-col>
     </el-row>
@@ -285,6 +255,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { useTodoStore } from '@/stores/todo'
@@ -292,11 +263,12 @@ import { useBillStore } from '@/stores/bill'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
+const { t, locale } = useI18n()
 const authStore = useAuthStore()
 const todoStore = useTodoStore()
 const billStore = useBillStore()
 
-const weekDays = ['一', '二', '三', '四', '五', '六', '日']
+const weekDays = computed(() => t('dashboardPage.weekDays'))
 const currentDate = ref(dayjs())
 const selectedDate = ref(dayjs())
 
@@ -305,42 +277,30 @@ const lunarDate = ref(null)
 const almanac = ref(null)
 
 // 每日 Tips 数据
-const tipsList = [
-  '💡 今天是个好日子，适合处理重要任务！',
-  '📝 记得把大任务拆分成小步骤，逐个击破更有效率。',
-  '💰 记账小贴士：每天花 5 分钟记录收支，月底不迷茫。',
-  '⏰ 番茄工作法：专注 25 分钟，休息 5 分钟，效率翻倍。',
-  '🎯 优先级管理：先做重要且紧急的事，再做重要不紧急的。',
-  '💪 适当休息很重要，每隔一小时起来活动一下。',
-  '📅 每周回顾一次待办清单，及时调整计划。',
-  '🌟 完成一项任务就给自己一个小奖励吧！',
-  '🧘 压力大时，深呼吸三次，重新整理思路。',
-  '📱 工作时把手机调成静音，减少干扰。',
-  '🍎 多吃水果蔬菜，保持精力充沛。',
-  '😴 保证充足睡眠，明天才更有精神。',
-  '📚 每天学习一点新知识，积少成多。',
-  '🤝 遇到困难不要犹豫，及时向同事或朋友求助。',
-  '🎉 别忘了庆祝自己的每一个小成就！'
-]
 const currentTip = ref('')
 
 const currentMonthText = computed(() => {
-  return currentDate.value.format('YYYY 年 MM 月')
+  const dt = currentDate.value.toDate()
+  return new Intl.DateTimeFormat(locale.value, { year: 'numeric', month: 'long' }).format(dt)
 })
 
 const currentDateText = computed(() => {
-  return dayjs().format('YYYY 年 MM 月 DD 日 dddd')
+  return new Intl.DateTimeFormat(locale.value, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'long'
+  }).format(new Date())
 })
 
 const greetingText = computed(() => {
   const hour = dayjs().hour()
-  if (hour < 6) return '夜深了，注意休息'
-  if (hour < 9) return '早上好'
-  if (hour < 12) return '上午好'
-  if (hour < 14) return '下午好'
-  if (hour < 18) return '下午好'
-  if (hour < 22) return '晚上好'
-  return '夜深了，早点休息'
+  if (hour < 6) return t('dashboardPage.greetingNight')
+  if (hour < 9) return t('dashboardPage.greetingMorning')
+  if (hour < 12) return t('dashboardPage.greetingForenoon')
+  if (hour < 18) return t('dashboardPage.greetingAfternoon')
+  if (hour < 22) return t('dashboardPage.greetingEvening')
+  return t('dashboardPage.greetingLateNight')
 })
 
 const calendarDates = computed(() => {
@@ -467,12 +427,6 @@ const loadAlmanac = () => {
   ]
   
   // 简化计算农历（实际需要更精确的算法）
-  const baseDate = dayjs('1900-01-31')
-  const diffDays = date.diff(baseDate, 'day')
-  const lunarCycle = 29.5306
-  const lunarMonthsCount = Math.floor(diffDays / lunarCycle)
-  const lunarDayIndex = Math.floor(diffDays % lunarCycle)
-  
   lunarDate.value = {
     gzYear: `${heavenlyStems[stemIndex]}${earthlyBranches[branchIndex]}`,
     animal: animals[animalIndex],
@@ -515,12 +469,11 @@ const loadAlmanac = () => {
 
 // 刷新 Tips
 const refreshTip = () => {
-  const randomIndex = Math.floor(Math.random() * tipsList.length)
-  currentTip.value = tipsList[randomIndex]
+  currentTip.value = t('dashboardPage.defaultTip')
 }
 
 const handleQuickAdd = () => {
-  ElMessage.info('请选择添加类型')
+  ElMessage.info(t('dashboardPage.selectAddType'))
 }
 
 const handleTodoStatusChange = async (todo) => {
@@ -595,7 +548,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .dashboard-container {
   padding: 12px;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+  background: transparent;
   height: calc(100vh - 70px);
   overflow: hidden;
   position: relative;
@@ -625,6 +578,10 @@ onMounted(() => {
   * {
     position: relative;
     z-index: 1;
+  }
+
+  &::before {
+    display: none;
   }
 
   .welcome-section {
@@ -1232,82 +1189,128 @@ onMounted(() => {
       }
     }
 
-    // Tips 卡片样式
-    .tips-card {
+    // 黄历和 Tips 合并卡片 - 紧凑版本
+    .info-card {
       border: none;
-      border-radius: 12px;
-      background: linear-gradient(135deg, rgba(239, 246, 255, 0.95) 0%, rgba(219, 234, 254, 0.95) 100%);
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(255, 251, 235, 0.9) 0%, rgba(254, 243, 199, 0.9) 100%);
       backdrop-filter: blur(10px);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
       margin-top: 8px !important;
-      transition: all 0.3s;
+      height: 56px;
+      flex-shrink: 0;
 
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 32px rgba(59, 130, 246, 0.2);
-      }
-
-      :deep(.el-card__header) {
-        padding: 8px 12px;
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        border-bottom: none;
-        border-radius: 12px 12px 0 0;
-      }
-
-      .tips-header {
+      :deep(.el-card__body) {
+        padding: 0 12px;
+        height: 100%;
         display: flex;
-        justify-content: space-between;
         align-items: center;
+      }
 
-        .tips-title {
-          font-size: 12px;
-          font-weight: 600;
-          color: white;
+      .info-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+
+        .date-section {
+          display: flex;
+          align-items: baseline;
+          gap: 6px;
+          flex-shrink: 0;
+
+          .lunar-day {
+            font-size: 16px;
+            font-weight: 700;
+            color: #92400e;
+          }
+
+          .lunar-month {
+            font-size: 11px;
+            color: #b45309;
+          }
+
+          .solar-date {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 500;
+          }
+
+          .year-tag {
+            transform: scale(0.85);
+          }
+        }
+
+        .almanac-section {
           display: flex;
           align-items: center;
           gap: 4px;
+          flex-shrink: 0;
 
-          .el-icon {
-            animation: lightbulbGlow 2s ease-in-out infinite;
+          .good-tag, .bad-tag {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            min-width: 20px;
+            text-align: center;
           }
 
-          @keyframes lightbulbGlow {
-            0%, 100% { filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5)); }
-            50% { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)); }
+          .good-tag {
+            color: #166534;
+            background: rgba(34, 197, 94, 0.2);
           }
-        }
 
-        .el-button {
-          color: white;
-          font-size: 10px;
-          padding: 0 4px;
-          height: auto;
-
-          &:hover {
-            color: #dbeafe;
-            transform: rotate(90deg);
+          .bad-tag {
+            color: #991b1b;
+            background: rgba(239, 68, 68, 0.2);
           }
-        }
-      }
 
-      .tips-content {
-        padding: 8px;
+          .almanac-list {
+            display: flex;
+            gap: 4px;
 
-        .tip-text {
-          font-size: 11px;
-          line-height: 1.6;
-          color: #1e40af;
-          margin: 0;
-          animation: textFadeIn 0.5s ease-out;
-
-          @keyframes textFadeIn {
-            from {
-              opacity: 0;
-              transform: translateY(5px);
+            .almanac-item {
+              font-size: 10px;
+              color: #78350f;
+              background: rgba(255, 255, 255, 0.5);
+              padding: 2px 6px;
+              border-radius: 4px;
+              white-space: nowrap;
             }
-            to {
-              opacity: 1;
-              transform: translateY(0);
+          }
+        }
+
+        .tips-section {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex: 1;
+          margin-left: auto;
+          padding-left: 12px;
+          border-left: 1px solid rgba(245, 158, 11, 0.2);
+
+          .tips-icon {
+            color: #f59e0b;
+            font-size: 14px;
+            flex-shrink: 0;
+          }
+
+          .tip-text {
+            font-size: 11px;
+            color: #475569;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .refresh-btn {
+            padding: 4px;
+            flex-shrink: 0;
+            color: #667eea;
+
+            &:hover {
+              transform: rotate(90deg);
             }
           }
         }

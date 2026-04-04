@@ -8,7 +8,7 @@
           </div>
           <h1 class="welcome-title">加入 DailyMate</h1>
           <p class="welcome-text">
-            开启高效管理之旅<br>
+            开启高效管理之旅<br />
             让每一天都井井有条
           </p>
           <div class="benefits">

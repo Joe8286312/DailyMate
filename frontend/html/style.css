@@ -160,6 +160,24 @@
     background-color: #e0f2fe;
 }
 
+.bill-select-col {
+    width: 50px;
+    text-align: center;
+}
+
+.profile-password-link-wrap {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.profile-password-link-btn {
+    background: transparent;
+    border: none;
+    color: #4299e1;
+    text-decoration: underline;
+    font-size: 14px;
+}
+
 /* 全局样式 */
 * {
     margin: 0;

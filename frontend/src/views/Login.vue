@@ -8,7 +8,7 @@
           </div>
           <h1 class="welcome-title">Welcome to DailyMate</h1>
           <p class="welcome-text">
-            一个现代化的个人日常管理工具<br>
+            一个现代化的个人日常管理工具<br />
             帮助您轻松管理待办事项和账单收支
           </p>
           <div class="features">

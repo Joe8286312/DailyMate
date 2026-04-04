@@ -23,7 +23,7 @@ export const useMessageStore = defineStore('message', () => {
   /**
    * 获取消息列表
    */
-  async function fetchMessages(userId, page = 0, size = 20) {
+  async function fetchMessages (userId, page = 0, size = 20) {
     loading.value = true
     try {
       const res = await getMessageList({ userId, page, size })
@@ -40,7 +40,7 @@ export const useMessageStore = defineStore('message', () => {
   /**
    * 获取未读消息数量
    */
-  async function fetchUnreadCount(userId) {
+  async function fetchUnreadCount (userId) {
     try {
       const res = await getUnreadCount(userId)
       unreadCount.value = res.data?.count || 0
@@ -52,7 +52,7 @@ export const useMessageStore = defineStore('message', () => {
   /**
    * 标记消息为已读
    */
-  async function markMessageAsRead(messageId) {
+  async function markMessageAsRead (messageId) {
     try {
       await markAsRead(messageId)
       // 更新本地状态
@@ -71,7 +71,7 @@ export const useMessageStore = defineStore('message', () => {
   /**
    * 批量标记已读
    */
-  async function markMessagesBatchAsRead(userId, messageIds) {
+  async function markMessagesBatchAsRead (userId, messageIds) {
     try {
       await markBatchAsRead(userId, messageIds)
       // 更新本地状态
@@ -91,7 +91,7 @@ export const useMessageStore = defineStore('message', () => {
   /**
    * 删除消息
    */
-  async function removeMessage(messageId, userId) {
+  async function removeMessage (messageId, userId) {
     try {
       await deleteMessage(messageId, userId)
       // 更新本地状态
@@ -107,7 +107,7 @@ export const useMessageStore = defineStore('message', () => {
   /**
    * 删除所有已读消息
    */
-  async function removeAllRead(userId) {
+  async function removeAllRead (userId) {
     try {
       await deleteAllRead(userId)
       // 清空已读消息
@@ -123,7 +123,7 @@ export const useMessageStore = defineStore('message', () => {
   /**
    * 重置状态
    */
-  function reset() {
+  function reset () {
     messages.value = []
     unreadCount.value = 0
     loading.value = false

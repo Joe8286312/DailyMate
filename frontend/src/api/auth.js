@@ -10,7 +10,7 @@ import request from '@/utils/request'
  * @param {string} data.username - 用户名
  * @param {string} data.password - 密码
  */
-export function login(data) {
+export function login (data) {
   return request({
     url: '/auth/login',
     method: 'post',
@@ -24,7 +24,7 @@ export function login(data) {
  * @param {string} data.username - 用户名
  * @param {string} data.password - 密码
  */
-export function register(data) {
+export function register (data) {
   return request({
     url: '/auth/register',
     method: 'post',
@@ -35,7 +35,7 @@ export function register(data) {
 /**
  * 获取当前用户信息
  */
-export function getCurrentUser() {
+export function getCurrentUser () {
   return request({
     url: '/user/current',
     method: 'get'
@@ -46,7 +46,7 @@ export function getCurrentUser() {
  * 更新用户信息
  * @param {Object} data - 用户信息
  */
-export function updateUser(data) {
+export function updateUser (data) {
   return request({
     url: '/user/update',
     method: 'put',
@@ -60,7 +60,7 @@ export function updateUser(data) {
  * @param {string} data.oldPassword - 旧密码
  * @param {string} data.newPassword - 新密码
  */
-export function changePassword(data) {
+export function changePassword (data) {
   return request({
     url: '/user/change-password',
     method: 'put',
@@ -71,7 +71,7 @@ export function changePassword(data) {
 /**
  * 退出登录
  */
-export function logout() {
+export function logout () {
   return request({
     url: '/auth/logout',
     method: 'post'

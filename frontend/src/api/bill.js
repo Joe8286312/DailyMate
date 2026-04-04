@@ -10,7 +10,7 @@ import request from '@/utils/request'
  * @param {number} params.userId - 用户 ID
  * @param {string} [params.date] - 日期（可选）
  */
-export function getBillList(params) {
+export function getBillList (params) {
   return request({
     url: '/bill/list',
     method: 'get',
@@ -22,7 +22,7 @@ export function getBillList(params) {
  * 获取账单详情
  * @param {number} id - 账单 ID
  */
-export function getBillById(id) {
+export function getBillById (id) {
   return request({
     url: `/bill/${id}`,
     method: 'get'
@@ -33,7 +33,7 @@ export function getBillById(id) {
  * 添加账单
  * @param {Object} data - 账单数据
  */
-export function addBill(data) {
+export function addBill (data) {
   return request({
     url: '/bill/add',
     method: 'post',
@@ -45,7 +45,7 @@ export function addBill(data) {
  * 更新账单
  * @param {Object} data - 账单数据
  */
-export function updateBill(data) {
+export function updateBill (data) {
   return request({
     url: '/bill/update',
     method: 'put',
@@ -57,7 +57,7 @@ export function updateBill(data) {
  * 删除账单
  * @param {number} id - 账单 ID
  */
-export function deleteBill(id) {
+export function deleteBill (id) {
   return request({
     url: `/bill/delete/${id}`,
     method: 'delete'
@@ -72,7 +72,7 @@ export function deleteBill(id) {
  * @param {string} params.start - 开始日期
  * @param {string} params.end - 结束日期
  */
-export function getBillsByType(params) {
+export function getBillsByType (params) {
   return request({
     url: '/bill/by-type',
     method: 'get',
@@ -85,7 +85,7 @@ export function getBillsByType(params) {
  * @param {Object} data - 请求数据
  * @param {number[]} data.ids - ID 列表
  */
-export function batchDeleteBill(data) {
+export function batchDeleteBill (data) {
   return request({
     url: '/bill/batch/delete',
     method: 'put',
@@ -99,7 +99,7 @@ export function batchDeleteBill(data) {
  * @param {number} params.userId - 用户 ID
  * @param {string} params.keyword - 搜索关键字
  */
-export function searchBill(params) {
+export function searchBill (params) {
   return request({
     url: '/bill/search',
     method: 'get',
@@ -114,7 +114,7 @@ export function searchBill(params) {
  * @param {number} params.year - 年份
  * @param {number} params.month - 月份
  */
-export function statMonth(params) {
+export function statMonth (params) {
   return request({
     url: '/bill/stat/month',
     method: 'get',
@@ -130,7 +130,7 @@ export function statMonth(params) {
  * @param {string} params.start - 开始日期
  * @param {string} params.end - 结束日期
  */
-export function statCategory(params) {
+export function statCategory (params) {
   return request({
     url: '/bill/stat/category',
     method: 'get',
@@ -144,7 +144,7 @@ export function statCategory(params) {
  * @param {number} params.userId - 用户 ID
  * @param {number} params.days - 天数
  */
-export function statTrend(params) {
+export function statTrend (params) {
   return request({
     url: '/bill/stat/trend',
     method: 'get',

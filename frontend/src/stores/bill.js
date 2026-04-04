@@ -53,7 +53,7 @@ export const useBillStore = defineStore('bill', () => {
   /**
    * 获取账单列表
    */
-  async function fetchBillList(params) {
+  async function fetchBillList (params) {
     loading.value = true
     try {
       const res = await getBillListApi(params)
@@ -69,7 +69,7 @@ export const useBillStore = defineStore('bill', () => {
   /**
    * 添加账单
    */
-  async function addBill(data) {
+  async function addBill (data) {
     const res = await addBillApi(data)
     const newBill = res.data || res
     if (newBill) {
@@ -81,7 +81,7 @@ export const useBillStore = defineStore('bill', () => {
   /**
    * 更新账单
    */
-  async function updateBill(data) {
+  async function updateBill (data) {
     const res = await updateBillApi(data)
     const updatedBill = res.data || res
     if (updatedBill) {
@@ -96,7 +96,7 @@ export const useBillStore = defineStore('bill', () => {
   /**
    * 删除账单
    */
-  async function deleteBill(id) {
+  async function deleteBill (id) {
     await deleteBillApi(id)
     bills.value = bills.value.filter(b => b.id !== id)
   }
@@ -104,7 +104,7 @@ export const useBillStore = defineStore('bill', () => {
   /**
    * 批量删除
    */
-  async function batchDeleteAction(ids) {
+  async function batchDeleteAction (ids) {
     await batchDeleteBillApi({ ids })
     bills.value = bills.value.filter(b => !ids.includes(b.id))
   }
@@ -112,7 +112,7 @@ export const useBillStore = defineStore('bill', () => {
   /**
    * 获取月度统计
    */
-  async function fetchMonthStats(userId, year, month) {
+  async function fetchMonthStats (userId, year, month) {
     try {
       const res = await statMonthApi({ userId, year, month })
       const data = res.data || res
@@ -129,7 +129,7 @@ export const useBillStore = defineStore('bill', () => {
   /**
    * 获取分类统计
    */
-  async function fetchCategoryStats(params) {
+  async function fetchCategoryStats (params) {
     try {
       const res = await statCategoryApi(params)
       return res.data || res || {}
@@ -142,7 +142,7 @@ export const useBillStore = defineStore('bill', () => {
   /**
    * 获取趋势统计
    */
-  async function fetchTrendStats(params) {
+  async function fetchTrendStats (params) {
     try {
       const res = await statTrendApi(params)
       return res.data || res || []
@@ -155,21 +155,21 @@ export const useBillStore = defineStore('bill', () => {
   /**
    * 设置筛选条件
    */
-  function setFilter(value) {
+  function setFilter (value) {
     filter.value = value
   }
 
   /**
    * 设置搜索关键字
    */
-  function setSearchKeyword(value) {
+  function setSearchKeyword (value) {
     searchKeyword.value = value
   }
 
   /**
    * 清空搜索
    */
-  function clearSearch() {
+  function clearSearch () {
     searchKeyword.value = ''
   }
 

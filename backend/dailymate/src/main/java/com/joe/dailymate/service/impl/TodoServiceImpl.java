@@ -26,6 +26,10 @@ public class TodoServiceImpl implements TodoService {
     @Override
     public Todo addTodo(Todo todo) {
         todo.setIsDelete(0);
+        // 防呆设计：确保 date 字段不为 null
+        if (todo.getDate() == null) {
+            todo.setDate(new Date());
+        }
         return todoRepository.save(todo);
     }
 

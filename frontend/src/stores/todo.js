@@ -48,7 +48,7 @@ export const useTodoStore = defineStore('todo', () => {
   /**
    * 获取待办事项列表
    */
-  async function fetchTodoList(params) {
+  async function fetchTodoList (params) {
     loading.value = true
     try {
       const res = await getTodoListApi(params)
@@ -64,7 +64,7 @@ export const useTodoStore = defineStore('todo', () => {
   /**
    * 添加待办事项
    */
-  async function addTodo(data) {
+  async function addTodo (data) {
     const res = await addTodoApi(data)
     const newTodo = res.data || res
     if (newTodo) {
@@ -76,7 +76,7 @@ export const useTodoStore = defineStore('todo', () => {
   /**
    * 更新待办事项
    */
-  async function updateTodo(data) {
+  async function updateTodo (data) {
     const res = await updateTodoApi(data)
     const updatedTodo = res.data || res
     if (updatedTodo) {
@@ -91,7 +91,7 @@ export const useTodoStore = defineStore('todo', () => {
   /**
    * 删除待办事项
    */
-  async function deleteTodo(id) {
+  async function deleteTodo (id) {
     await deleteTodoApi(id)
     todos.value = todos.value.filter(t => t.id !== id)
   }
@@ -99,7 +99,7 @@ export const useTodoStore = defineStore('todo', () => {
   /**
    * 批量更新状态
    */
-  async function batchUpdateStatusAction(ids, status) {
+  async function batchUpdateStatusAction (ids, status) {
     await batchUpdateStatus({ ids, status })
     todos.value = todos.value.map(todo =>
       ids.includes(todo.id) ? { ...todo, status } : todo
@@ -109,7 +109,7 @@ export const useTodoStore = defineStore('todo', () => {
   /**
    * 批量删除
    */
-  async function batchDeleteAction(ids) {
+  async function batchDeleteAction (ids) {
     await batchDelete({ ids })
     todos.value = todos.value.filter(t => !ids.includes(t.id))
   }
@@ -117,7 +117,7 @@ export const useTodoStore = defineStore('todo', () => {
   /**
    * 搜索待办事项
    */
-  async function searchTodoAction(params) {
+  async function searchTodoAction (params) {
     loading.value = true
     try {
       const res = await searchTodo(params)
@@ -132,21 +132,21 @@ export const useTodoStore = defineStore('todo', () => {
   /**
    * 设置筛选条件
    */
-  function setFilter(value) {
+  function setFilter (value) {
     filter.value = value
   }
 
   /**
    * 设置搜索关键字
    */
-  function setSearchKeyword(value) {
+  function setSearchKeyword (value) {
     searchKeyword.value = value
   }
 
   /**
    * 清空搜索
    */
-  function clearSearch() {
+  function clearSearch () {
     searchKeyword.value = ''
   }
 

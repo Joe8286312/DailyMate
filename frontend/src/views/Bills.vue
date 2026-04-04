@@ -5,14 +5,14 @@
       <div class="toolbar">
         <div class="toolbar-left">
           <el-tabs v-model="filter" class="filter-tabs" @tab-change="handleFilterChange">
-            <el-tab-pane label="全部" name="all" />
-            <el-tab-pane label="收入" name="income" />
-            <el-tab-pane label="支出" name="expense" />
+            <el-tab-pane :label="t('billPage.filterAll')" name="all" />
+            <el-tab-pane :label="t('billPage.filterIncome')" name="income" />
+            <el-tab-pane :label="t('billPage.filterExpense')" name="expense" />
           </el-tabs>
 
           <el-input
             v-model="searchKeyword"
-            placeholder="搜索账单..."
+            :placeholder="t('bill.searchPlaceholder')"
             class="search-input"
             clearable
             @clear="handleSearch"
@@ -31,15 +31,15 @@
             size="small"
             @click="handleBatchDelete"
           >
-            批量删除 ({{ selectedIds.length }})
+            {{ t('billPage.batchDeleteWithCount', { count: selectedIds.length }) }}
           </el-button>
           <el-button type="primary" size="small" @click="showStatistics = true">
             <el-icon><DataAnalysis /></el-icon>
-            统计分析
+            {{ t('billPage.stats') }}
           </el-button>
           <el-button type="success" size="small" @click="handleAdd">
             <el-icon><Plus /></el-icon>
-            添加账单
+            {{ t('bill.add') }}
           </el-button>
         </div>
       </div>
@@ -52,55 +52,55 @@
         class="bills-table"
       >
         <el-table-column type="selection" width="40" align="center" />
-        <el-table-column label="类型" width="70" align="center">
+        <el-table-column :label="t('billPage.tableType')" width="70" align="center">
           <template #default="{ row }">
             <el-tag :type="row.type === 1 ? 'success' : 'danger'" size="small" effect="plain">
-              {{ row.type === 1 ? '收入' : '支出' }}
+              {{ row.type === 1 ? t('billPage.typeIncome') : t('billPage.typeExpense') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="分类" width="90" align="center" prop="category">
+        <el-table-column :label="t('billPage.tableCategory')" width="90" align="center" prop="category">
           <template #default="{ row }">
             <span class="category-text">{{ row.category }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="金额" width="120" align="center" prop="amount">
+        <el-table-column :label="t('billPage.tableAmount')" width="120" align="center" prop="amount">
           <template #default="{ row }">
             <span :class="row.type === 1 ? 'text-success' : 'text-danger'" class="amount-text">
               {{ row.type === 1 ? '+' : '-' }}¥{{ row.amount?.toFixed(2) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="备注" prop="remark" min-width="150" show-overflow-tooltip>
+        <el-table-column :label="t('billPage.tableRemark')" prop="remark" min-width="150" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="remark-text">{{ row.remark || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="日期" width="100" align="center">
+        <el-table-column :label="t('billPage.tableDate')" width="100" align="center">
           <template #default="{ row }">
             {{ row.date ? formatDate(row.date) : '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" align="center" fixed="right">
+        <el-table-column :label="t('billPage.tableActions')" width="120" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" link @click="handleEdit(row)">
-              编辑
+              {{ t('common.edit') }}
             </el-button>
             <el-button type="danger" size="small" link @click="handleDelete(row)">
-              删除
+              {{ t('common.delete') }}
             </el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <!-- 空状态 -->
-      <el-empty v-if="!loading && filteredBills.length === 0" description="暂无账单记录" :image-size="80" />
+      <el-empty v-if="!loading && filteredBills.length === 0" :description="t('bill.noBills')" :image-size="80" />
     </div>
 
     <!-- 统计分析对话框 -->
     <el-dialog
       v-model="showStatistics"
-      title="账单统计"
+      :title="t('billPage.dialogStatsTitle')"
       width="800px"
       :close-on-click-modal="false"
       class="statistics-dialog"
@@ -111,7 +111,7 @@
     <!-- 编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '编辑账单' : '添加账单'"
+      :title="isEdit ? t('billPage.dialogEdit') : t('billPage.dialogAdd')"
       width="520px"
       @close="handleDialogClose"
       class="bill-dialog"
@@ -122,20 +122,20 @@
         :rules="rules"
         label-width="70px"
       >
-        <el-form-item label="类型" prop="type">
+        <el-form-item :label="t('bill.type')" prop="type">
           <el-radio-group v-model="formData.type" @change="handleTypeChange" class="type-radio">
             <el-radio :label="1">
               <el-icon :size="16" color="#48bb78"><TrendCharts /></el-icon>
-              收入
+              {{ t('billPage.typeIncome') }}
             </el-radio>
             <el-radio :label="2">
               <el-icon :size="16" color="#f56565"><Money /></el-icon>
-              支出
+              {{ t('billPage.typeExpense') }}
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="分类" prop="category">
-          <el-select v-model="formData.category" placeholder="请选择分类" style="width: 100%">
+        <el-form-item :label="t('bill.category')" prop="category">
+          <el-select v-model="formData.category" :placeholder="t('billPage.categoryPlaceholder')" style="width: 100%">
             <el-option
               v-for="item in currentCategories"
               :key="item"
@@ -144,34 +144,34 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="金额" prop="amount">
+        <el-form-item :label="t('bill.amount')" prop="amount">
           <el-input-number
             v-model="formData.amount"
             :min="0"
             :precision="2"
             :step="0.01"
             style="width: 100%"
-            placeholder="请输入金额"
+            :placeholder="t('billPage.amountPlaceholder')"
             controls-position="right"
           />
         </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="formData.remark" placeholder="请输入备注（可选）" />
+        <el-form-item :label="t('billPage.tableRemark')" prop="remark">
+          <el-input v-model="formData.remark" :placeholder="t('billPage.remarkPlaceholder')" />
         </el-form-item>
-        <el-form-item label="日期" prop="date">
+        <el-form-item :label="t('bill.date')" prop="date">
           <el-date-picker
             v-model="formData.date"
             type="date"
-            placeholder="选择日期"
+            :placeholder="t('billPage.datePlaceholder')"
             value-format="YYYY-MM-DD"
             style="width: 100%"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" @click="handleSubmit" :loading="submitLoading">
-          确定
+          {{ t('common.confirm') }}
         </el-button>
       </template>
     </el-dialog>
@@ -180,6 +180,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { DataAnalysis, TrendCharts, Money } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
@@ -188,6 +189,7 @@ import BillStatistics from '@/components/BillStatistics.vue'
 
 const authStore = useAuthStore()
 const billStore = useBillStore()
+const { t, locale } = useI18n()
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -199,27 +201,27 @@ const isEdit = ref(false)
 const formRef = ref(null)
 const showStatistics = ref(false)
 
-const incomeCategories = ['工资收入', '奖金收入', '投资收益', '其他收入']
-const expenseCategories = ['餐饮', '购物', '交通', '住宿', '娱乐', '医疗', '教育', '其他支出']
+const incomeCategories = computed(() => t('billPage.incomeCategories'))
+const expenseCategories = computed(() => t('billPage.expenseCategories'))
 
 const currentCategories = computed(() => {
-  return formData.type === 1 ? incomeCategories : expenseCategories
+  return formData.type === 1 ? incomeCategories.value : expenseCategories.value
 })
 
 const formData = reactive({
   id: null,
   type: 2,
-  category: '餐饮',
+  category: expenseCategories.value[0],
   amount: 0,
   remark: '',
   date: new Date().toISOString().split('T')[0]
 })
 
 const rules = {
-  type: [{ required: true, message: '请选择类型', trigger: 'change' }],
-  category: [{ required: true, message: '请选择分类', trigger: 'change' }],
-  amount: [{ required: true, message: '请输入金额', trigger: 'blur' }],
-  date: [{ required: true, message: '请选择日期', trigger: 'change' }]
+  type: [{ required: true, message: t('billPage.typeRequired'), trigger: 'change' }],
+  category: [{ required: true, message: t('billPage.categoryRequired'), trigger: 'change' }],
+  amount: [{ required: true, message: t('billPage.amountRequired'), trigger: 'blur' }],
+  date: [{ required: true, message: t('billPage.dateRequired'), trigger: 'change' }]
 }
 
 const filteredBills = computed(() => {
@@ -228,20 +230,9 @@ const filteredBills = computed(() => {
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString('zh-CN', {
+  return new Date(dateStr).toLocaleString(locale.value, {
     month: '2-digit',
     day: '2-digit'
-  })
-}
-
-const formatDateTime = (dateStr) => {
-  if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
   })
 }
 
@@ -266,7 +257,7 @@ const handleAdd = () => {
   Object.assign(formData, {
     id: null,
     type: 2,
-    category: '餐饮',
+    category: expenseCategories.value[0],
     amount: 0,
     remark: '',
     date: new Date().toISOString().split('T')[0]
@@ -299,10 +290,10 @@ const handleSubmit = async () => {
 
       if (isEdit.value) {
         await billStore.updateBill(data)
-        ElMessage.success('更新成功')
+        ElMessage.success(t('billPage.updateSuccess'))
       } else {
         await billStore.addBill(data)
-        ElMessage.success('添加成功')
+        ElMessage.success(t('billPage.addSuccess'))
       }
 
       dialogVisible.value = false
@@ -317,11 +308,11 @@ const handleSubmit = async () => {
 
 const handleDelete = async (row) => {
   try {
-    await ElMessageBox.confirm('确定要删除该账单吗？', '提示', {
+    await ElMessageBox.confirm(t('billPage.deleteConfirm'), t('common.tip'), {
       type: 'warning'
     })
     await billStore.deleteBill(row.id)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('billPage.deleteSuccess'))
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除失败:', error)
@@ -331,11 +322,11 @@ const handleDelete = async (row) => {
 
 const handleBatchDelete = async () => {
   try {
-    await ElMessageBox.confirm(`确定要删除选中的 ${selectedIds.value.length} 项账单吗？`, '提示', {
+    await ElMessageBox.confirm(t('billPage.batchDeleteConfirm', { count: selectedIds.value.length }), t('common.tip'), {
       type: 'warning'
     })
     await billStore.batchDeleteAction(selectedIds.value)
-    ElMessage.success('批量删除成功')
+    ElMessage.success(t('billPage.batchDeleteSuccess'))
     selectedIds.value = []
     await loadBills()
   } catch (error) {
@@ -366,10 +357,11 @@ onMounted(() => {
   padding: 16px;
   height: calc(100vh - 56px);
   overflow: hidden;
-  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  background: transparent;
 
   .bills-card {
-    background: white;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
     border-radius: 12px;
     padding: 16px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
@@ -435,9 +427,12 @@ onMounted(() => {
   .bills-table {
     flex: 1;
     overflow: auto;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    padding: 6px;
 
     :deep(.el-table__header th) {
-      background: #f8fafc;
+      background: rgba(248, 250, 252, 0.9);
       font-weight: 600;
       color: #475569;
       font-size: 12px;
@@ -447,6 +442,7 @@ onMounted(() => {
     :deep(.el-table__body td) {
       padding: 8px;
       font-size: 13px;
+      background: rgba(255, 255, 255, 0.75);
 
       .category-text {
         color: #64748b;

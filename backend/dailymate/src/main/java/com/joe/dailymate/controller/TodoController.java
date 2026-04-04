@@ -3,12 +3,14 @@ package com.joe.dailymate.controller;
 import com.joe.dailymate.common.Result;
 import com.joe.dailymate.dto.request.TodoRequest;
 import com.joe.dailymate.entity.Todo;
+import com.joe.dailymate.service.ReminderService;
 import com.joe.dailymate.service.TodoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Date;
 import java.util.List;
@@ -24,6 +26,9 @@ public class TodoController {
 
     @Autowired
     private TodoService todoService;
+
+    @Autowired
+    private ReminderService reminderService;
 
     /**
      * 获取待办事项列表
@@ -58,15 +63,45 @@ public class TodoController {
      */
     @PostMapping("/add")
     public Result<Todo> addTodo(@Valid @RequestBody TodoRequest request) {
+        System.out.println("=== 接收到添加待办请求 ===");
+        System.out.println("request.getDate(): " + request.getDate());
+        System.out.println("request.getTitle(): " + request.getTitle());
+        
         Todo todo = new Todo();
         todo.setUserId(request.getUserId());
         todo.setTitle(request.getTitle());
         todo.setContent(request.getContent());
         todo.setPriority(request.getPriority());
         todo.setStatus(request.getStatus());
+        
+        // 防呆设计：确保 date 字段不为 null
+        if (request.getDate() != null) {
+            todo.setDate(request.getDate());
+            System.out.println("使用 request 的 date: " + todo.getDate());
+        } else {
+            // 如果前端没有传 date，使用当前日期
+            todo.setDate(new java.util.Date());
+            System.out.println("使用当前日期作为默认值：" + todo.getDate());
+        }
+        
         todo.setStartTime(request.getStartTime());
         todo.setEndTime(request.getEndTime());
         todo.setFinishTime(request.getFinishTime());
+
+        // 设置提醒相关字段
+        todo.setReminderEnabled(request.getReminderEnabled() != null ? request.getReminderEnabled() : false);
+        todo.setReminderOffset(request.getReminderOffset() != null ? request.getReminderOffset() : 0);
+        // 计算提醒时间
+        if (request.getReminderEnabled() && request.getEndTime() != null) {
+            todo.setReminderTime(reminderService.calculateReminderTime(
+                request.getEndTime(), 
+                request.getReminderOffset()
+            ));
+        }
+        todo.setIsReminded(false);
+
+        System.out.println("=== 准备保存 ===");
+        System.out.println("todo.getDate(): " + todo.getDate());
 
         Todo saved = todoService.addTodo(todo);
         return Result.success("添加成功", saved);
@@ -89,6 +124,24 @@ public class TodoController {
         existing.setStartTime(request.getStartTime());
         existing.setEndTime(request.getEndTime());
         existing.setFinishTime(request.getFinishTime());
+
+        // 更新提醒相关字段
+        if (request.getReminderEnabled() != null) {
+            existing.setReminderEnabled(request.getReminderEnabled());
+        }
+        if (request.getReminderOffset() != null) {
+            existing.setReminderOffset(request.getReminderOffset());
+        }
+        // 重新计算提醒时间
+        if (request.getReminderEnabled() && request.getEndTime() != null) {
+            existing.setReminderTime(reminderService.calculateReminderTime(
+                request.getEndTime(), 
+                request.getReminderOffset()
+            ));
+            existing.setIsReminded(false); // 重置提醒状态
+        } else {
+            existing.setReminderTime(null);
+        }
 
         Todo updated = todoService.updateTodo(existing);
         return Result.success("更新成功", updated);
@@ -232,5 +285,83 @@ public class TodoController {
                                              @RequestParam Integer priority) {
         List<Todo> todos = todoService.getTodoListByUserAndPriority(userId, priority);
         return Result.success(todos);
+    }
+
+    // ================== 提醒功能 API ===================
+
+    /**
+     * 注册 SSE 消息推送连接
+     */
+    @GetMapping(value = "/remind/stream/{userId}", produces = "text/event-stream")
+    public SseEmitter streamReminders(@PathVariable Long userId) {
+        return reminderService.register(userId);
+    }
+
+    /**
+     * 设置待办提醒
+     */
+    @PutMapping("/remind/set/{id}")
+    public Result<Void> setReminder(@PathVariable Long id,
+                                     @RequestBody Map<String, Object> request) {
+        Todo todo = todoService.findById(id);
+        if (todo == null) {
+            return Result.error(404, "待办事项不存在");
+        }
+
+        Boolean enabled = (Boolean) request.get("enabled");
+        Integer offset = (Integer) request.get("offset");
+
+        if (enabled == null) {
+            return Result.error(400, "enabled 参数不能为空");
+        }
+
+        todo.setReminderEnabled(enabled);
+        todo.setReminderOffset(offset != null ? offset : 0);
+
+        if (enabled && todo.getEndTime() != null) {
+            todo.setReminderTime(reminderService.calculateReminderTime(
+                todo.getEndTime(), 
+                todo.getReminderOffset()
+            ));
+            todo.setIsReminded(false);
+        } else {
+            todo.setReminderTime(null);
+        }
+
+        todoService.updateTodo(todo);
+        return Result.successMessage("提醒设置成功");
+    }
+
+    /**
+     * 取消待办提醒
+     */
+    @PutMapping("/remind/cancel/{id}")
+    public Result<Void> cancelReminder(@PathVariable Long id) {
+        Todo todo = todoService.findById(id);
+        if (todo == null) {
+            return Result.error(404, "待办事项不存在");
+        }
+
+        todo.setReminderEnabled(false);
+        todo.setReminderTime(null);
+        todo.setIsReminded(false);
+
+        todoService.updateTodo(todo);
+        return Result.successMessage("取消提醒成功");
+    }
+
+    /**
+     * 标记提醒为已读
+     */
+    @PutMapping("/remind/ack/{id}")
+    public Result<Void> acknowledgeReminder(@PathVariable Long id) {
+        Todo todo = todoService.findById(id);
+        if (todo == null) {
+            return Result.error(404, "待办事项不存在");
+        }
+
+        todo.setIsReminded(true);
+        todoService.updateTodo(todo);
+        return Result.successMessage("操作成功");
     }
 }

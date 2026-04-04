@@ -30,4 +30,10 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
     
     // 按用户 ID 和结束时间范围查询
     List<Todo> findAllByUserIdAndEndTimeBetween(Long userId, LocalDateTime start, LocalDateTime end);
+
+    // ================== 提醒功能 ===================
+    /**
+     * 查找所有启用提醒但未提醒的待办事项
+     */
+    List<Todo> findByReminderEnabledTrueAndIsRemindedFalse();
 }

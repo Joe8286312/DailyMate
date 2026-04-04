@@ -16,7 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * 用户登录
    */
-  async function login(loginForm) {
+  async function login (loginForm) {
     const res = await loginApi(loginForm)
     const { token: newToken, user } = res.data || res
     
@@ -32,7 +32,7 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * 用户注册
    */
-  async function register(registerForm) {
+  async function register (registerForm) {
     const res = await registerApi(registerForm)
     return res
   }
@@ -40,7 +40,7 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * 获取当前用户信息
    */
-  async function fetchCurrentUser() {
+  async function fetchCurrentUser () {
     try {
       const res = await getCurrentUser()
       userInfo.value = res.data || res
@@ -54,7 +54,7 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * 更新用户信息
    */
-  function updateUserInfo(info) {
+  function updateUserInfo (info) {
     userInfo.value = { ...userInfo.value, ...info }
     localStorage.setItem('dailyMate_user', JSON.stringify(userInfo.value))
   }
@@ -62,7 +62,7 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * 退出登录
    */
-  async function logout() {
+  async function logout () {
     try {
       await logoutApi()
     } catch (error) {
@@ -78,7 +78,7 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * 清除本地存储（用于异常处理）
    */
-  function clearStorage() {
+  function clearStorage () {
     token.value = ''
     userInfo.value = null
     localStorage.removeItem('dailyMate_token')

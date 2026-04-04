@@ -49,7 +49,7 @@
           <template #header>
             <span class="card-title">收支趋势（近 6 个月）</span>
           </template>
-          <div ref="trendChartRef" class="chart-container"></div>
+          <div ref="trendChartRef" class="chart-container" />
         </el-card>
       </el-col>
       
@@ -59,7 +59,7 @@
           <template #header>
             <span class="card-title">支出分类占比</span>
           </template>
-          <div ref="categoryChartRef" class="chart-container"></div>
+          <div ref="categoryChartRef" class="chart-container" />
         </el-card>
       </el-col>
     </el-row>
@@ -182,8 +182,6 @@ const renderCategoryChart = () => {
     name,
     value: parseFloat(value)
   }))
-  
-  const colors = ['#4299e1', '#48bb78', '#ed8936', '#f56565', '#9f7aea', '#38b2ac', '#ecc94b', '#f687b3']
   
   chart.setOption({
     tooltip: {

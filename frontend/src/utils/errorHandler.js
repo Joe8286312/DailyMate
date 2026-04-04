@@ -19,7 +19,7 @@ export const ErrorType = {
  * 错误日志类
  */
 export class AppError extends Error {
-  constructor(message, type = ErrorType.UNKNOWN, originalError = null, extraInfo = {}) {
+  constructor (message, type = ErrorType.UNKNOWN, originalError = null, extraInfo = {}) {
     super(message)
     this.name = 'AppError'
     this.type = type
@@ -30,7 +30,7 @@ export class AppError extends Error {
     this.url = window.location.href
   }
 
-  toJSON() {
+  toJSON () {
     return {
       name: this.name,
       message: this.message,
@@ -47,7 +47,7 @@ export class AppError extends Error {
 /**
  * 记录错误日志
  */
-export function logError(error, options = {}) {
+export function logError (error, options = {}) {
   const appError = error instanceof AppError 
     ? error 
     : new AppError(error.message || '未知错误', ErrorType.UNKNOWN, error, options.extraInfo)
@@ -72,7 +72,7 @@ export function logError(error, options = {}) {
 /**
  * 网络错误处理
  */
-export function handleNetworkError(error) {
+export function handleNetworkError (error) {
   const appError = new AppError(
     '网络连接失败，请检查网络连接',
     ErrorType.NETWORK,
@@ -89,7 +89,7 @@ export function handleNetworkError(error) {
 /**
  * API 错误处理
  */
-export function handleApiError(error, defaultMessage = '请求失败') {
+export function handleApiError (error, defaultMessage = '请求失败') {
   const appError = new AppError(
     error.response?.data?.message || error.message || defaultMessage,
     ErrorType.API,
@@ -106,7 +106,7 @@ export function handleApiError(error, defaultMessage = '请求失败') {
 /**
  * 认证错误处理
  */
-export function handleAuthError(error) {
+export function handleAuthError (error) {
   const appError = new AppError(
     '认证失败，请重新登录',
     ErrorType.AUTH,
@@ -119,21 +119,21 @@ export function handleAuthError(error) {
 /**
  * 获取错误队列
  */
-export function getErrorQueue() {
+export function getErrorQueue () {
   return [...errorQueue]
 }
 
 /**
  * 清空错误队列
  */
-export function clearErrorQueue() {
+export function clearErrorQueue () {
   errorQueue.length = 0
 }
 
 /**
  * 导出错误日志
  */
-export function exportErrorLogs() {
+export function exportErrorLogs () {
   const blob = new Blob([JSON.stringify(errorQueue, null, 2)], { 
     type: 'application/json' 
   })
@@ -148,7 +148,7 @@ export function exportErrorLogs() {
 /**
  * 全局错误边界（Vue 错误处理）
  */
-export function setupGlobalErrorHandler(app = null) {
+export function setupGlobalErrorHandler (app = null) {
   // Vue 错误处理
   if (app) {
     app.config.errorHandler = (error, instance, info) => {
@@ -192,7 +192,7 @@ export function setupGlobalErrorHandler(app = null) {
 /**
  * 重试函数
  */
-export async function retry(fn, options = {}) {
+export async function retry (fn, options = {}) {
   const {
     maxRetries = 3,
     delay = 1000,
